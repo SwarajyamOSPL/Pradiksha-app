@@ -13,6 +13,8 @@ Route::get('products/{product:slug}', [ProductController::class, 'show'])->name(
 Route::get('packages', [PackageController::class, 'index'])->name('packages.index');
 Route::get('packages/{package:slug}', [PackageController::class, 'show'])->name('packages.show');
 
+Route::view('franchise', 'franchise')->name('franchise');
+
 Route::middleware(['auth'])->group(function () {
     Route::view('account/pending', 'pages.account.pending')->name('account.pending');
 });

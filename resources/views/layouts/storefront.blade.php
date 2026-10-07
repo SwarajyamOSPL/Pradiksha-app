@@ -13,6 +13,7 @@
                 <nav class="hidden items-center gap-8 md:flex">
                     <flux:link :href="route('products.index')" variant="ghost" class="font-medium text-brand-800 hover:text-brand-600 dark:text-cream-100 dark:hover:text-brand-300" wire:navigate>{{ __('Products') }}</flux:link>
                     <flux:link :href="route('packages.index')" variant="ghost" class="font-medium text-brand-800 hover:text-brand-600 dark:text-cream-100 dark:hover:text-brand-300" wire:navigate>{{ __('Packages') }}</flux:link>
+                    <flux:link :href="route('franchise')" variant="ghost" class="font-medium text-brand-800 hover:text-brand-600 dark:text-cream-100 dark:hover:text-brand-300" wire:navigate>{{ __('Franchise') }}</flux:link>
                 </nav>
 
                 <div class="hidden items-center gap-3 md:flex">
@@ -37,6 +38,7 @@
                 <div x-show="mobileOpen" x-cloak class="absolute inset-x-0 top-[73px] z-10 flex flex-col gap-2 border-b border-brand-100 bg-cream-50 p-4 shadow-lg md:hidden dark:border-brand-800 dark:bg-brand-950">
                     <flux:link :href="route('products.index')" wire:navigate>{{ __('Products') }}</flux:link>
                     <flux:link :href="route('packages.index')" wire:navigate>{{ __('Packages') }}</flux:link>
+                    <flux:link :href="route('franchise')" wire:navigate>{{ __('Franchise') }}</flux:link>
                     @auth
                         @if (auth()->user()->isApproved())
                             <flux:link :href="route('cart.index')" wire:navigate>
@@ -78,6 +80,7 @@
                     <div>
                         <flux:heading size="sm" class="text-brand-900 uppercase dark:text-cream-50">{{ __('Account') }}</flux:heading>
                         <ul class="mt-4 space-y-2">
+                            <li><flux:link :href="route('franchise')" variant="subtle" wire:navigate>{{ __('Franchise Model') }}</flux:link></li>
                             @guest
                                 <li><flux:link :href="route('register')" variant="subtle" wire:navigate>{{ __('Become a Franchise Partner') }}</flux:link></li>
                                 <li><flux:link :href="route('login')" variant="subtle" wire:navigate>{{ __('Log in') }}</flux:link></li>

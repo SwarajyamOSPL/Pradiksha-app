@@ -86,3 +86,28 @@ test('package show page lists included products', function () {
         ->assertSee('Detail Bundle')
         ->assertSee('Bundled Product');
 });
+
+test('franchise page loads for guests with registration calls to action', function () {
+    $this->get(route('franchise'))
+        ->assertOk()
+        ->assertSee('Franchise Model')
+        ->assertSee('Become a Franchise Partner')
+        ->assertSee(route('register'))
+        ->assertSee(route('login'));
+});
+
+test('franchise page does not show registration prompts to logged in partners', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('franchise'))
+        ->assertOk()
+        ->assertSee('Browse Products')
+        ->assertDontSee('Ready to become a franchise partner?');
+});
+
+test('franchise page is linked from the storefront navbar and footer', function () {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    expect(substr_count($html, route('franchise')))->toBeGreaterThanOrEqual(3);
+});
