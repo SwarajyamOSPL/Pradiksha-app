@@ -64,6 +64,7 @@
                         </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
+            </flux:sidebar.nav>
 
             <flux:spacer />
 
