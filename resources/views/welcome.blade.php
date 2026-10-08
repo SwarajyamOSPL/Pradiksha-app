@@ -1,4 +1,10 @@
 <x-layouts::storefront>
+    <x-hero-carousel :slides="[
+        ['src' => asset('images/sliders/pradiksha-range.webp'), 'alt' => __('Pradiksha Complete Therapy Range')],
+        ['src' => asset('images/sliders/metabolicrange.webp'), 'alt' => __('Pradiksha Metabolic Care Range')],
+        ['src' => asset('images/sliders/therapy-range.webp'), 'alt' => __('Pradiksha Therapy Solutions')],
+    ]" />
+
     <section class="relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-b from-brand-100 via-cream-50 to-cream-50 dark:from-brand-900 dark:via-brand-950 dark:to-brand-950"></div>
         <div class="absolute -top-24 -right-24 size-96 rounded-full bg-brand-200/50 blur-3xl dark:bg-brand-700/20"></div>
@@ -30,20 +36,6 @@
             </div>
         </div>
     </section>
-
-    @if ($categories->isNotEmpty())
-        <section class="mx-auto max-w-6xl px-6 pb-16">
-            <div class="flex flex-wrap justify-center gap-2">
-                @foreach ($categories as $category)
-                    <flux:link :href="route('products.index', ['category' => $category])" wire:navigate class="max-w-full">
-                        <flux:badge class="max-w-full border border-brand-200 bg-white! text-wrap! text-brand-700! hover:bg-brand-50! dark:border-brand-700 dark:bg-brand-900! dark:text-brand-200!">
-                            {{ $category }}
-                        </flux:badge>
-                    </flux:link>
-                @endforeach
-            </div>
-        </section>
-    @endif
 
     @if ($featuredProducts->isNotEmpty())
         <section class="mx-auto max-w-6xl px-6 pb-20">

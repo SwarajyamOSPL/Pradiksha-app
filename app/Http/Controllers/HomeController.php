@@ -11,7 +11,6 @@ class HomeController extends Controller
     {
         return view('welcome', [
             'featuredProducts' => Product::query()->active()->latest()->take(8)->get(),
-            'categories' => Product::query()->active()->whereNotNull('category')->distinct()->orderBy('category')->pluck('category'),
         ]);
     }
 }

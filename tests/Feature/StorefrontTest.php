@@ -111,3 +111,20 @@ test('franchise page is linked from the storefront navbar and footer', function 
 
     expect(substr_count($html, route('franchise')))->toBeGreaterThanOrEqual(3);
 });
+
+test('home page shows the slider images as a carousel', function () {
+    $html = $this->get(route('home'))->assertOk()->assertSee('aria-roledescription="carousel"', false)->getContent();
+
+    foreach (['pradiksha-range', 'metabolicrange', 'therapy-range'] as $slide) {
+        expect($html)->toContain("images/sliders/{$slide}.webp")
+            ->and(public_path("images/sliders/{$slide}.webp"))->toBeFile();
+    }
+});
+
+test('home page does not show the category tag cloud', function () {
+    Product::factory()->create(['category' => 'Distinctive Tag Category']);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertDontSee('products?category=', false);
+});
