@@ -19,8 +19,6 @@ class ProductController extends Controller
                 ->orderBy('name')
                 ->paginate(12)
                 ->withQueryString(),
-            'categories' => Product::query()->active()->whereNotNull('category')->distinct()->orderBy('category')->pluck('category'),
-            'selectedCategory' => $category,
         ]);
     }
 

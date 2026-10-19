@@ -128,3 +128,11 @@ test('home page does not show the category tag cloud', function () {
         ->assertOk()
         ->assertDontSee('products?category=', false);
 });
+
+test('products page does not show the category filter chips', function () {
+    Product::factory()->create(['category' => 'Hair Oil']);
+
+    $this->get(route('products.index'))
+        ->assertOk()
+        ->assertDontSee('products?category=', false);
+});

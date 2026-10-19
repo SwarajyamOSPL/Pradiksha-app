@@ -11,23 +11,6 @@
             </flux:callout>
         @endunless
 
-        @if ($categories->isNotEmpty())
-            <div class="mt-6 flex flex-wrap gap-2">
-                <flux:link :href="route('products.index')" wire:navigate>
-                    <flux:badge class="{{ $selectedCategory === null ? 'bg-brand-600! text-white!' : 'border border-brand-200 bg-white! text-brand-700! dark:border-brand-700 dark:bg-brand-900! dark:text-brand-200!' }}">
-                        {{ __('All') }}
-                    </flux:badge>
-                </flux:link>
-                @foreach ($categories as $category)
-                    <flux:link :href="route('products.index', ['category' => $category])" wire:navigate class="max-w-full">
-                        <flux:badge class="max-w-full text-wrap! {{ $selectedCategory === $category ? 'bg-brand-600! text-white!' : 'border border-brand-200 bg-white! text-brand-700! dark:border-brand-700 dark:bg-brand-900! dark:text-brand-200!' }}">
-                            {{ $category }}
-                        </flux:badge>
-                    </flux:link>
-                @endforeach
-            </div>
-        @endif
-
         <div class="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
             @forelse ($products as $product)
                 @include('products._card', ['product' => $product])
