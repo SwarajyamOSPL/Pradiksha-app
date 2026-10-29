@@ -94,6 +94,43 @@ test('a logged in user visiting the sales login page is sent on to their dashboa
         ->assertRedirect();
 });
 
+test('a sales manager is not sent to the admin area after logging in, even if they tried it earlier', function () {
+    $manager = User::factory()->salesManager()->create();
+
+    $this->get(route('admin.dashboard'))->assertRedirect(route('login'));
+
+    $this->post(route('login.store'), ['email' => $manager->email, 'password' => 'password', 'portal' => 'sales'])
+        ->assertRedirect(route('dashboard'));
+
+    $this->get(route('dashboard'))->assertRedirect(route('sales.dashboard'));
+    $this->get(route('sales.dashboard'))->assertOk();
+});
+
+test('a franchise holder is not sent to the sales or admin area after logging in', function () {
+    $holder = User::factory()->create();
+
+    $this->get(route('sales.dashboard'))->assertRedirect(route('sales.login'));
+
+    $this->post(route('login.store'), ['email' => $holder->email, 'password' => 'password'])
+        ->assertRedirect(route('dashboard'));
+});
+
+test('users are still returned to the page they wanted when it is in their own area', function () {
+    $admin = User::factory()->admin()->create();
+    $manager = User::factory()->salesManager()->create();
+
+    $this->get(route('admin.orders.index'))->assertRedirect(route('login'));
+    $this->post(route('login.store'), ['email' => $admin->email, 'password' => 'password'])
+        ->assertRedirect(route('admin.orders.index'));
+
+    auth()->logout();
+    session()->flush();
+
+    $this->get(route('sales.franchise-holders.index'))->assertRedirect(route('sales.login'));
+    $this->post(route('login.store'), ['email' => $manager->email, 'password' => 'password', 'portal' => 'sales'])
+        ->assertRedirect(route('sales.franchise-holders.index'));
+});
+
 test('the main login page points sales managers to their own login', function () {
     $this->get(route('login'))
         ->assertOk()

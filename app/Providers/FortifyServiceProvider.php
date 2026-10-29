@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Fortify;
 
@@ -81,6 +83,33 @@ class FortifyServiceProvider extends ServiceProvider
             }
 
             return $user;
+        });
+
+        $this->app->singleton(LoginResponse::class, fn () => new class implements LoginResponse
+        {
+            /**
+             * Send the user back to the page they were trying to reach, unless that page belongs to a
+             * different role's area (for example a sales manager who earlier tried /admin).
+             */
+            public function toResponse($request)
+            {
+                if ($request->wantsJson()) {
+                    return new JsonResponse('', 204);
+                }
+
+                $intended = (string) $request->session()->get('url.intended', '');
+                $path = (string) parse_url($intended, PHP_URL_PATH);
+                $role = $request->user()?->role;
+
+                $forbiddenArea = ($role !== UserRole::Admin && str_starts_with($path, '/admin'))
+                    || ($role !== UserRole::SalesManager && str_starts_with($path, '/sales'));
+
+                if ($forbiddenArea) {
+                    $request->session()->forget('url.intended');
+                }
+
+                return redirect()->intended(Fortify::redirects('login'));
+            }
         });
 
         $this->app->singleton(RegisterResponse::class, fn () => new class implements RegisterResponse
