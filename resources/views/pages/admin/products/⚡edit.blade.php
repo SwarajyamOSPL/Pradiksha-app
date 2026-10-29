@@ -24,6 +24,8 @@ new #[Title('Edit Product')] class extends Component
 
     public ?string $price = null;
 
+    public ?string $mrp = null;
+
     public string $stock = '0';
 
     public bool $is_active = true;
@@ -40,6 +42,7 @@ new #[Title('Edit Product')] class extends Component
         $this->category = $product->category;
         $this->description = $product->description;
         $this->price = $product->price;
+        $this->mrp = $product->mrp;
         $this->stock = (string) $product->stock;
         $this->is_active = $product->is_active;
         $this->currentImagePath = $product->image_path;

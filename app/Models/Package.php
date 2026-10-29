@@ -22,10 +22,11 @@ use Illuminate\Support\Collection;
  * @property float $subtotal
  * @property DiscountType|null $discount_type
  * @property float $discount_value
+ * @property float|null $fixed_price
  * @property float $price
  * @property bool $is_active
  */
-#[Fillable(['name', 'slug', 'description', 'image_path', 'subtotal', 'discount_type', 'discount_value', 'price', 'is_active'])]
+#[Fillable(['name', 'slug', 'description', 'image_path', 'subtotal', 'discount_type', 'discount_value', 'fixed_price', 'price', 'is_active'])]
 class Package extends Model
 {
     /** @use HasFactory<PackageFactory> */
@@ -44,9 +45,18 @@ class Package extends Model
             'subtotal' => 'decimal:2',
             'discount_type' => DiscountType::class,
             'discount_value' => 'decimal:2',
+            'fixed_price' => 'decimal:2',
             'price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Whether the package sells at one set price instead of the total of its products.
+     */
+    public function hasFixedPrice(): bool
+    {
+        return $this->fixed_price !== null;
     }
 
     /**
@@ -78,16 +88,48 @@ class Package extends Model
      */
     public function refreshPrice(): void
     {
-        $subtotal = $this->products()->get()->sum(
-            fn (Product $product) => (float) ($product->price ?? 0) * $product->pivot->quantity,
-        );
-
-        $breakdown = self::priceBreakdown($subtotal, $this->discount_type, (float) $this->discount_value);
+        $breakdown = $this->priceFromProducts($this->products()->get());
 
         $this->forceFill([
             'subtotal' => $breakdown['subtotal'],
             'price' => $breakdown['price'],
         ])->save();
+    }
+
+    /**
+     * What a customer pays for this package: the fixed price if there is one, otherwise the total of
+     * the products less any discount. Needs the products relation to be loaded.
+     *
+     * @return array{subtotal: float, discount: float, price: float}
+     */
+    public function checkoutBreakdown(): array
+    {
+        return $this->priceFromProducts($this->products);
+    }
+
+    /**
+     * @param  Collection<int, Product>  $products
+     * @return array{subtotal: float, discount: float, price: float}
+     */
+    private function priceFromProducts(Collection $products): array
+    {
+        if ($this->hasFixedPrice()) {
+            $fixed = round(max((float) $this->fixed_price, 0), 2);
+
+            return ['subtotal' => $fixed, 'discount' => 0.0, 'price' => $fixed];
+        }
+
+        $subtotal = $products->sum(fn (Product $product) => (float) ($product->price ?? 0) * $product->pivot->quantity);
+
+        return self::priceBreakdown($subtotal, $this->discount_type, (float) $this->discount_value);
+    }
+
+    /**
+     * Total number of units across all products in the package. Needs the products relation to be loaded.
+     */
+    public function unitCount(): int
+    {
+        return (int) $this->products->sum(fn (Product $product) => $product->pivot->quantity);
     }
 
     /**
@@ -130,7 +172,7 @@ class Package extends Model
 
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class)->withPivot('quantity')->withTimestamps();
+        return $this->belongsToMany(Product::class)->withPivot('quantity')->withTimestamps()->orderBy('package_product.id');
     }
 
     public function orders(): HasMany

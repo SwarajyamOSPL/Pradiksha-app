@@ -25,6 +25,7 @@ use Illuminate\Support\Str;
  * @property UserRole $role
  * @property UserStatus $status
  * @property int|null $sales_manager_id
+ * @property int|null $signup_package_id
  * @property string|null $phone
  * @property string|null $business_name
  * @property string|null $address
@@ -38,7 +39,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'role', 'status', 'sales_manager_id', 'phone', 'business_name', 'address', 'city', 'state', 'pincode'])]
+#[Fillable(['name', 'email', 'password', 'role', 'status', 'sales_manager_id', 'signup_package_id', 'phone', 'business_name', 'address', 'city', 'state', 'pincode'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -90,6 +91,32 @@ class User extends Authenticatable
     public function isApproved(): bool
     {
         return $this->status === UserStatus::Approved;
+    }
+
+    /**
+     * The package this person chose when signing up, which they can pay for before being approved.
+     *
+     * @return BelongsTo<Package, $this>
+     */
+    public function signupPackage(): BelongsTo
+    {
+        return $this->belongsTo(Package::class, 'signup_package_id');
+    }
+
+    /**
+     * Someone who signed up through a package may use the site, to pay for it, before an admin approves them.
+     */
+    public function canPayForSignupPackage(): bool
+    {
+        return $this->status === UserStatus::Pending
+            && $this->signup_package_id !== null
+            && ! $this->hasPaidForSignupPackage();
+    }
+
+    public function hasPaidForSignupPackage(): bool
+    {
+        return $this->signup_package_id !== null
+            && $this->orders()->paid()->where('package_id', $this->signup_package_id)->exists();
     }
 
     /**

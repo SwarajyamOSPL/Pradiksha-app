@@ -23,6 +23,8 @@ new #[Title('Create Product')] class extends Component
 
     public ?string $price = null;
 
+    public ?string $mrp = null;
+
     public string $stock = '0';
 
     public bool $is_active = true;

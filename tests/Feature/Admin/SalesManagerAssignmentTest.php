@@ -27,6 +27,7 @@ test('creating a sales manager takes the admin straight to assigning franchises'
         ->test('pages::admin.sales-managers.create')
         ->set('name', 'Asha Verma')
         ->set('email', 'asha@example.com')
+        ->set('phone', '9876543210')
         ->set('password', 'password')
         ->set('password_confirmation', 'password')
         ->call('save')

@@ -20,11 +20,7 @@ class PlaceOrder
     {
         $package->load('products');
 
-        $subtotal = $package->products->sum(
-            fn (Product $product) => (float) ($product->price ?? 0) * $product->pivot->quantity,
-        );
-
-        $breakdown = Package::priceBreakdown($subtotal, $package->discount_type, (float) $package->discount_value);
+        $breakdown = $package->checkoutBreakdown();
 
         return DB::transaction(function () use ($user, $package, $notes, $breakdown) {
             $order = Order::create([
@@ -37,7 +33,8 @@ class PlaceOrder
             ]);
 
             foreach ($package->products as $product) {
-                $this->addItem($order, $product, $product->pivot->quantity);
+                // In a fixed-price package the products are included in the package price, not charged separately.
+                $this->addItem($order, $product, $product->pivot->quantity, included: $package->hasFixedPrice());
             }
 
             return $order;
@@ -71,9 +68,9 @@ class PlaceOrder
         });
     }
 
-    private function addItem(Order $order, Product $product, int $quantity): void
+    private function addItem(Order $order, Product $product, int $quantity, bool $included = false): void
     {
-        $unitPrice = (float) ($product->price ?? 0);
+        $unitPrice = $included ? 0.0 : (float) ($product->price ?? 0);
 
         $order->items()->create([
             'product_id' => $product->id,

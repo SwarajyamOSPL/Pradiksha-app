@@ -18,11 +18,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $description
  * @property string|null $image_path
  * @property float|null $price
+ * @property float|null $mrp
  * @property int $stock
  * @property bool $is_active
  * @property string|null $source_url
  */
-#[Fillable(['name', 'slug', 'category', 'description', 'image_path', 'price', 'stock', 'is_active', 'source_url'])]
+#[Fillable(['name', 'slug', 'category', 'description', 'image_path', 'price', 'mrp', 'stock', 'is_active', 'source_url'])]
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
@@ -51,9 +52,23 @@ class Product extends Model
     {
         return [
             'price' => 'decimal:2',
+            'mrp' => 'decimal:2',
             'stock' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Whether the offer price is genuinely below the printed MRP, so the saving is worth showing.
+     */
+    public function hasOffer(): bool
+    {
+        return $this->mrp !== null && $this->price !== null && (float) $this->price > 0 && (float) $this->mrp > (float) $this->price;
+    }
+
+    public function savingsPercentage(): int
+    {
+        return $this->hasOffer() ? (int) round(((float) $this->mrp - (float) $this->price) / (float) $this->mrp * 100) : 0;
     }
 
     public function isInStock(): bool

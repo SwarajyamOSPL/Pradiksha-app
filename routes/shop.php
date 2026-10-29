@@ -10,6 +10,8 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::patch('cart/{product}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('cart/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
 
+    Route::livewire('shop/products', 'pages::shop.products')->name('member.products');
+
     Route::livewire('checkout', 'pages::shop.checkout')->name('checkout');
     Route::livewire('packages/{package:slug}/checkout', 'pages::shop.package-checkout')->name('packages.checkout');
 

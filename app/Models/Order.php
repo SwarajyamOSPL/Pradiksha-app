@@ -33,10 +33,15 @@ use Illuminate\Support\Carbon;
  * @property string|null $invoice_number
  * @property Carbon|null $paid_at
  * @property string|null $notes
+ * @property string|null $courier_name
+ * @property string|null $awb_number
+ * @property string|null $tracking_url
+ * @property Carbon|null $dispatched_at
  */
 #[Fillable([
     'user_id', 'package_id', 'type', 'status', 'payment_status', 'payment_method', 'razorpay_order_id', 'razorpay_payment_id',
     'subtotal', 'discount_amount', 'tax_rate', 'tax_inclusive', 'tax_amount', 'total_amount', 'invoice_number', 'paid_at', 'notes',
+    'courier_name', 'awb_number', 'tracking_url', 'dispatched_at',
 ])]
 class Order extends Model
 {
@@ -61,7 +66,16 @@ class Order extends Model
             'tax_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'paid_at' => 'datetime',
+            'dispatched_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Whether the admin has saved dispatch details (an AWB number) for this order.
+     */
+    public function isDispatched(): bool
+    {
+        return filled($this->awb_number);
     }
 
     /**
@@ -78,6 +92,17 @@ class Order extends Model
     public function isPaid(): bool
     {
         return $this->payment_status === PaymentStatus::Paid;
+    }
+
+    /**
+     * Whether this is a fixed-price package order, where the products are included in the package
+     * price instead of being charged one by one. Needs the items relation to be loaded.
+     */
+    public function itemsAreIncluded(): bool
+    {
+        return $this->package_id !== null
+            && $this->items->isNotEmpty()
+            && $this->items->every(fn (OrderItem $item) => (float) $item->line_total === 0.0);
     }
 
     /**

@@ -70,7 +70,8 @@ class FortifyServiceProvider extends ServiceProvider
             }
 
             // Only reveal the account state once the password is right, so this can't be used to probe for accounts.
-            if ($user->status === UserStatus::Pending) {
+            // Someone who signed up through a package may log in to pay for it before being approved.
+            if ($user->status === UserStatus::Pending && ! $user->canPayForSignupPackage()) {
                 throw ValidationException::withMessages([
                     Fortify::username() => __('Your registration is awaiting admin approval. You will be able to log in once it is approved.'),
                 ]);
@@ -115,11 +116,20 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->singleton(RegisterResponse::class, fn () => new class implements RegisterResponse
         {
             /**
-             * New franchise holders are not logged in: their request goes to the admin and they
-             * can sign in once it is approved.
+             * Someone who signed up through a package stays logged in and goes straight to paying for it.
+             * Everyone else is not logged in: their request goes to the admin and they can sign in once
+             * it is approved.
              */
             public function toResponse($request)
             {
+                $user = $request->user();
+
+                if ($user?->canPayForSignupPackage()) {
+                    return redirect()
+                        ->route('packages.checkout', $user->signupPackage)
+                        ->with('status', __('Your account is created. Complete the payment below to finish.'));
+                }
+
                 Auth::guard(config('fortify.guard'))->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();

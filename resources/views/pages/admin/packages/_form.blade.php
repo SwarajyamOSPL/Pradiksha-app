@@ -45,24 +45,33 @@
 
     <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
         <flux:heading size="lg">{{ __('Pricing') }}</flux:heading>
-        <flux:text size="sm" class="mt-1">{{ __('The package price is worked out automatically from the product prices and quantities above.') }}</flux:text>
+        <flux:text size="sm" class="mt-1">{{ __('By default the package price is worked out from the product prices and quantities above. Fill in a fixed price to sell the package at exactly that amount instead.') }}</flux:text>
 
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <flux:select wire:model.live="discount_type" :label="__('Discount')">
-                <flux:select.option value="">{{ __('No discount') }}</flux:select.option>
-                @foreach (\App\Enums\DiscountType::cases() as $type)
-                    <flux:select.option value="{{ $type->value }}">{{ $type->label() }}</flux:select.option>
-                @endforeach
-            </flux:select>
+        <flux:input
+            wire:model.live.debounce.400ms="fixed_price"
+            :label="__('Fixed package price (₹), optional')"
+            type="number" step="0.01" min="0" class="mt-4"
+            description="{{ __('Leave empty to use the calculated price and discount below.') }}"
+        />
 
-            @if ($discount_type)
-                <flux:input
-                    wire:model.live.debounce.400ms="discount_value"
-                    :label="$discount_type === 'percent' ? __('Discount (%)') : __('Discount amount (₹)')"
-                    type="number" step="0.01" min="0" :max="$discount_type === 'percent' ? 100 : null"
-                />
-            @endif
-        </div>
+        @unless ($pricing['fixed'])
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <flux:select wire:model.live="discount_type" :label="__('Discount')">
+                    <flux:select.option value="">{{ __('No discount') }}</flux:select.option>
+                    @foreach (\App\Enums\DiscountType::cases() as $type)
+                        <flux:select.option value="{{ $type->value }}">{{ $type->label() }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                @if ($discount_type)
+                    <flux:input
+                        wire:model.live.debounce.400ms="discount_value"
+                        :label="$discount_type === 'percent' ? __('Discount (%)') : __('Discount amount (₹)')"
+                        type="number" step="0.01" min="0" :max="$discount_type === 'percent' ? 100 : null"
+                    />
+                @endif
+            </div>
+        @endunless
 
         @if (count($pricing['unpriced']) > 0)
             <flux:callout icon="exclamation-triangle" color="amber" class="mt-4">
@@ -75,10 +84,12 @@
         @endif
 
         <div class="mt-5 flex flex-col gap-2 text-sm">
-            <div class="flex items-center justify-between">
-                <flux:text>{{ __('Products total') }}</flux:text>
-                <flux:text>₹{{ number_format($pricing['subtotal'], 2) }}</flux:text>
-            </div>
+            @unless ($pricing['fixed'])
+                <div class="flex items-center justify-between">
+                    <flux:text>{{ __('Products total') }}</flux:text>
+                    <flux:text>₹{{ number_format($pricing['subtotal'], 2) }}</flux:text>
+                </div>
+            @endunless
             @if ($pricing['discount'] > 0)
                 <div class="flex items-center justify-between">
                     <flux:text class="text-green-600 dark:text-green-400">{{ __('Discount') }}</flux:text>

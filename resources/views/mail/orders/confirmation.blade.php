@@ -13,8 +13,11 @@
 <x-mail::table>
 | {{ __('Product') }} | {{ __('Qty') }} | {{ __('Amount') }} |
 | :------- | :---: | ------: |
+@if ($order->itemsAreIncluded())
+| **{{ $order->package->name }} {{ __('Package') }}** | 1 | ₹{{ number_format((float) $order->subtotal, 2) }} |
+@endif
 @foreach ($order->items as $item)
-| {{ $item->product_name }} | {{ $item->quantity }} | ₹{{ number_format((float) $item->line_total, 2) }} |
+| {{ $item->product_name }} | {{ $item->quantity }} | {{ $order->itemsAreIncluded() ? __('Included') : '₹'.number_format((float) $item->line_total, 2) }} |
 @endforeach
 </x-mail::table>
 

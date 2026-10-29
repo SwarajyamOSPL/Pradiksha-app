@@ -122,7 +122,7 @@ new #[Title('Products')] class extends Component
             <flux:table.column>{{ __('Image') }}</flux:table.column>
             <flux:table.column>{{ __('Name') }}</flux:table.column>
             <flux:table.column>{{ __('Category') }}</flux:table.column>
-            <flux:table.column>{{ __('Price') }}</flux:table.column>
+            <flux:table.column>{{ __('Offer price') }}</flux:table.column>
             <flux:table.column>{{ __('Stock in hand') }}</flux:table.column>
             <flux:table.column>{{ __('Status') }}</flux:table.column>
             <flux:table.column>{{ __('Actions') }}</flux:table.column>

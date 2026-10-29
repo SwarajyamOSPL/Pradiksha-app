@@ -70,6 +70,8 @@ new #[Title('Order Details')] class extends Component
 
     @include('pages::shop._order-tracker', ['order' => $order])
 
+    @include('pages::shop._shipping-status', ['order' => $order])
+
     @unless ($order->isPaid())
         <flux:callout icon="clock" color="amber" class="mt-6">
             <flux:callout.heading>{{ __('Payment pending') }}</flux:callout.heading>
@@ -86,7 +88,7 @@ new #[Title('Order Details')] class extends Component
         @foreach ($order->items as $item)
             <div class="flex items-center justify-between border-b border-zinc-200 pb-2 dark:border-zinc-800">
                 <flux:text>{{ $item->product_name }} &times;{{ $item->quantity }}</flux:text>
-                <flux:text class="font-medium">₹{{ number_format((float) $item->line_total, 2) }}</flux:text>
+                <flux:text class="font-medium">{{ $order->itemsAreIncluded() ? __('Included') : '₹'.number_format((float) $item->line_total, 2) }}</flux:text>
             </div>
         @endforeach
     </div>

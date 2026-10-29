@@ -7,6 +7,7 @@ use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\Package;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -28,7 +29,13 @@ class CreateNewUser implements CreatesNewUsers
             ...$this->franchiseHolderRules(),
         ])->validate();
 
+        // Someone who chose a package on the packages page pays for it right after signing up.
+        $package = filled($input['package'] ?? null)
+            ? Package::query()->active()->where('slug', $input['package'])->first()
+            : null;
+
         return User::create([
+            'signup_package_id' => $package?->id,
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],

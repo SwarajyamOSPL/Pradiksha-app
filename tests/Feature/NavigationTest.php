@@ -23,12 +23,19 @@ test('admins and sales managers do not get a duplicate platform dashboard link',
     $this->actingAs(User::factory()->salesManager()->create())->get(route('sales.dashboard'))->assertOk()->assertDontSee('Platform');
 });
 
-test('franchise holders keep their platform dashboard link and shop menu', function () {
+test('franchise holders get a short menu of their own with no admin options', function () {
     $this->actingAs(User::factory()->create())
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Platform')
-        ->assertSee('My Orders');
+        ->assertSee('My Franchise')
+        ->assertSeeInOrder(['Dashboard', 'Products', 'Cart', 'Order History'])
+        ->assertSee(route('member.products'), false)
+        ->assertDontSee('Franchise Holders')
+        ->assertDontSee('Sales Managers')
+        ->assertDontSee('Overview')
+        ->assertDontSee(route('admin.dashboard'), false)
+        ->assertDontSee(route('sales.dashboard'), false)
+        ->assertDontSee(route('packages.index'), false);
 });
 
 test('the settings pages share the cleaned menu', function (Closure $makeUser) {

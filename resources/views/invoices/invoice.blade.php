@@ -87,13 +87,25 @@
             </tr>
         </thead>
         <tbody>
+            @if ($order->itemsAreIncluded())
+                <tr>
+                    <td></td>
+                    <td>
+                        <strong>{{ $order->package->name }} {{ __('Package') }}</strong><br>
+                        <span class="muted">{{ __('Includes the products listed below') }}</span>
+                    </td>
+                    <td class="center">1</td>
+                    <td class="right">{{ $money($order->subtotal) }}</td>
+                    <td class="right">{{ $money($order->subtotal) }}</td>
+                </tr>
+            @endif
             @foreach ($order->items as $item)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $item->product_name }}</td>
                     <td class="center">{{ $item->quantity }}</td>
-                    <td class="right">{{ $money($item->unit_price) }}</td>
-                    <td class="right">{{ $money($item->line_total) }}</td>
+                    <td class="right">{{ $order->itemsAreIncluded() ? '—' : $money($item->unit_price) }}</td>
+                    <td class="right">{{ $order->itemsAreIncluded() ? __('Included') : $money($item->line_total) }}</td>
                 </tr>
             @endforeach
         </tbody>

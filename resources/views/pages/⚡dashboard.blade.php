@@ -55,9 +55,8 @@ new #[Title('Dashboard')] class extends Component
             </div>
 
             <div class="flex flex-wrap gap-2">
-                <flux:button :href="route('products.index')" variant="primary" icon="shopping-bag" wire:navigate>{{ __('Browse Products') }}</flux:button>
-                <flux:button :href="route('packages.index')" icon="archive-box" wire:navigate>{{ __('Packages') }}</flux:button>
-                <flux:button :href="route('cart.index')" icon="shopping-cart" wire:navigate>{{ __('Basket') }}</flux:button>
+                <flux:button :href="route('member.products')" variant="primary" icon="shopping-bag" wire:navigate>{{ __('Products') }}</flux:button>
+                <flux:button :href="route('cart.index')" icon="shopping-cart" wire:navigate>{{ __('Cart') }}</flux:button>
             </div>
         </div>
 
@@ -86,7 +85,7 @@ new #[Title('Dashboard')] class extends Component
                         <dd class="font-medium text-zinc-900 dark:text-white">{{ auth()->user()->phone }}</dd>
                     </div>
                     <div class="sm:col-span-2">
-                        <dt class="text-zinc-500 dark:text-zinc-400">{{ __('Address') }}</dt>
+                        <dt class="text-zinc-500 dark:text-zinc-400">{{ __('Delivery address') }}</dt>
                         <dd class="font-medium text-zinc-900 dark:text-white">
                             {{ collect([auth()->user()->address, auth()->user()->city, auth()->user()->state, auth()->user()->pincode])->filter()->join(', ') }}
                         </dd>
@@ -100,15 +99,30 @@ new #[Title('Dashboard')] class extends Component
                 <flux:heading size="lg">{{ __('My sales manager') }}</flux:heading>
 
                 @if ($salesManager)
-                    <div class="mt-4 flex items-center gap-4">
+                    <div class="mt-4 flex items-start gap-4">
                         <flux:avatar size="lg" :name="$salesManager->name" :initials="$salesManager->initials()" />
-                        <div class="min-w-0">
-                            <p class="truncate text-base font-medium text-zinc-900 dark:text-white">{{ $salesManager->name }}</p>
-                            <a href="mailto:{{ $salesManager->email }}" class="block truncate text-sm text-brand-600 hover:underline dark:text-brand-300">{{ $salesManager->email }}</a>
-                            @if ($salesManager->phone)
-                                <a href="tel:{{ $salesManager->phone }}" class="block text-sm text-zinc-600 hover:underline dark:text-zinc-300">{{ $salesManager->phone }}</a>
-                            @endif
-                        </div>
+                        <dl class="min-w-0 space-y-2 text-sm">
+                            <div>
+                                <dt class="text-zinc-500 dark:text-zinc-400">{{ __('Name') }}</dt>
+                                <dd class="truncate text-base font-medium text-zinc-900 dark:text-white">{{ $salesManager->name }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-zinc-500 dark:text-zinc-400">{{ __('Contact number') }}</dt>
+                                <dd class="font-medium text-zinc-900 dark:text-white">
+                                    @if ($salesManager->phone)
+                                        <a href="tel:{{ $salesManager->phone }}" class="text-brand-600 hover:underline dark:text-brand-300">{{ $salesManager->phone }}</a>
+                                    @else
+                                        <span class="text-zinc-500">{{ __('Not provided yet') }}</span>
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-zinc-500 dark:text-zinc-400">{{ __('Email ID') }}</dt>
+                                <dd class="truncate font-medium">
+                                    <a href="mailto:{{ $salesManager->email }}" class="text-brand-600 hover:underline dark:text-brand-300">{{ $salesManager->email }}</a>
+                                </dd>
+                            </div>
+                        </dl>
                     </div>
                     <flux:text size="sm" class="mt-4">{{ __('Appointed by the company to help you with products and orders.') }}</flux:text>
                 @else
@@ -141,16 +155,29 @@ new #[Title('Dashboard')] class extends Component
 
                 <div class="mt-4 flex flex-col gap-3">
                     @foreach ($activeOrders as $order)
-                        <a href="{{ route('orders.show', $order) }}" wire:navigate wire:key="active-order-{{ $order->id }}" class="flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200 p-4 transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/50">
-                            <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
-                                <flux:icon :name="$order->status === \App\Enums\OrderStatus::Shipped ? 'truck' : 'clock'" class="size-5" />
-                            </span>
-                            <div class="min-w-0 flex-1">
-                                <p class="font-medium text-zinc-900 dark:text-white">{{ __('Order #:id', ['id' => $order->id]) }} &middot; ₹{{ number_format((float) $order->total_amount, 2) }}</p>
-                                <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ __($order->status->customerMessage()) }}</p>
+                        <div wire:key="active-order-{{ $order->id }}" class="flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+                            <a href="{{ route('orders.show', $order) }}" wire:navigate class="flex min-w-0 flex-1 items-center gap-4">
+                                <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+                                    <flux:icon :name="$order->status === \App\Enums\OrderStatus::Shipped ? 'truck' : 'clock'" class="size-5" />
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="font-medium text-zinc-900 dark:text-white">{{ __('Order #:id', ['id' => $order->id]) }} &middot; ₹{{ number_format((float) $order->total_amount, 2) }}</p>
+                                    <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ __($order->status->customerMessage()) }}</p>
+                                    @if ($order->awb_number)
+                                        <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                                            {{ $order->courier_name ? $order->courier_name.' · ' : '' }}{{ __('AWB') }} {{ $order->awb_number }}
+                                        </p>
+                                    @endif
+                                </div>
+                            </a>
+
+                            <div class="flex items-center gap-2">
+                                <flux:badge size="sm" :color="$order->status->color()">{{ $order->status->label() }}</flux:badge>
+                                @if ($order->tracking_url)
+                                    <flux:button size="sm" icon-trailing="arrow-top-right-on-square" :href="$order->tracking_url" target="_blank" rel="noopener noreferrer">{{ __('Track') }}</flux:button>
+                                @endif
                             </div>
-                            <flux:badge size="sm" :color="$order->status->color()">{{ $order->status->label() }}</flux:badge>
-                        </a>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -158,15 +185,15 @@ new #[Title('Dashboard')] class extends Component
 
         <div>
             <div class="flex items-center justify-between gap-4">
-                <flux:heading size="lg">{{ __('Products and franchise prices') }}</flux:heading>
-                <flux:button size="sm" variant="ghost" icon-trailing="arrow-right" :href="route('products.index')" wire:navigate>
+                <flux:heading size="lg">{{ __('Available products and offer prices') }}</flux:heading>
+                <flux:button size="sm" variant="ghost" icon-trailing="arrow-right" :href="route('member.products')" wire:navigate>
                     {{ __('View all :count products', ['count' => $productCount]) }}
                 </flux:button>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
+            <div class="mt-4 grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-4">
                 @forelse ($products as $product)
-                    @include('products._card', ['product' => $product])
+                    <x-member-product-card :product="$product" wire:key="dash-product-{{ $product->id }}" />
                 @empty
                     <flux:text class="col-span-full">{{ __('No products available yet.') }}</flux:text>
                 @endforelse

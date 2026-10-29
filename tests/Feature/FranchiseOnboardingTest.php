@@ -165,7 +165,7 @@ test('the franchise dashboard shows products with their prices', function () {
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Products and franchise prices')
+        ->assertSee('Available products and offer prices')
         ->assertSee('Herbal Hair Oil')
         ->assertSee('₹285.00')
         ->assertDontSee('Hidden Product');
@@ -216,7 +216,7 @@ test('the franchise dashboard shows paid orders in progress with where they are'
 
     // Delivered and unpaid orders are not "in progress".
     $html = $this->actingAs($user)->get(route('dashboard'))->getContent();
-    $inProgress = str($html)->between('Orders in progress', 'Products and franchise prices')->toString();
+    $inProgress = str($html)->between('Orders in progress', 'Available products and offer prices')->toString();
 
     expect($inProgress)->not->toContain(route('orders.show', $delivered))
         ->and($inProgress)->not->toContain(route('orders.show', $unpaid));

@@ -26,6 +26,7 @@ trait ProductValidationRules
             'category' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'mrp' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'stock' => ['required', 'integer', 'min:0', 'max:1000000'],
             'is_active' => ['boolean'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],

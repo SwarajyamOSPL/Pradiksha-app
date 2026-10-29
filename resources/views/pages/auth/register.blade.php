@@ -1,11 +1,41 @@
+@php
+    // A package chosen on the packages page, passed along as ?package=slug (and kept through validation errors).
+    $chosenPackage = \App\Models\Package::query()->active()->with('products')->where('slug', (string) request('package', old('package')))->first();
+    $selectedPackage = $chosenPackage?->isAvailable() ? $chosenPackage : null;
+@endphp
+
 <x-layouts::auth :title="__('Register')" wide>
     <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Become a Pradiksha franchise holder')" :description="__('Register to view product pricing and place orders. An admin will review and approve your account.')" />
+        @if ($selectedPackage)
+            <x-auth-header :title="__('Register to buy the :name package', ['name' => $selectedPackage->name])" :description="__('Create your account, then you will go straight to payment.')" />
+
+            <flux:callout icon="archive-box" color="green">
+                <flux:callout.heading>{{ __(':name package', ['name' => $selectedPackage->name]) }} &middot; ₹{{ number_format((float) $selectedPackage->price, 2) }}</flux:callout.heading>
+                <flux:callout.text>
+                    {{ trans_choice(':count product|:count products', $selectedPackage->products->count()) }},
+                    {{ trans_choice(':count unit in total|:count units in total', $selectedPackage->unitCount()) }}.
+                    <flux:link :href="route('packages.index')" wire:navigate>{{ __('Choose a different package') }}</flux:link>
+                </flux:callout.text>
+            </flux:callout>
+        @else
+            <x-auth-header :title="__('Become a Pradiksha franchise holder')" :description="__('Register to view product pricing and place orders. An admin will review and approve your account.')" />
+
+            @if ($chosenPackage)
+                <flux:callout icon="no-symbol" color="amber">
+                    <flux:callout.heading>{{ __('The :name package is out of stock right now', ['name' => $chosenPackage->name]) }}</flux:callout.heading>
+                    <flux:callout.text>{{ __('You can still register, and we will approve your account shortly.') }}</flux:callout.text>
+                </flux:callout>
+            @endif
+        @endif
 
         <x-auth-session-status class="text-center" :status="session('status')" />
 
         <form method="POST" action="{{ route('register.store') }}" class="flex flex-col gap-6">
             @csrf
+
+            @if ($selectedPackage)
+                <input type="hidden" name="package" value="{{ $selectedPackage->slug }}">
+            @endif
 
             <flux:input
                 name="name"

@@ -59,11 +59,13 @@ new #[Title('Order Details')] class extends Component
         <flux:badge class="mt-4">{{ __('Package') }}: {{ $order->package->name }}</flux:badge>
     @endif
 
+    @include('pages::shop._shipping-status', ['order' => $order])
+
     <div class="mt-6 flex flex-col gap-3">
         @foreach ($order->items as $item)
             <div class="flex items-center justify-between border-b border-zinc-200 pb-2 dark:border-zinc-800">
                 <flux:text>{{ $item->product_name }} &times;{{ $item->quantity }}</flux:text>
-                <flux:text class="font-medium">₹{{ number_format((float) $item->line_total, 2) }}</flux:text>
+                <flux:text class="font-medium">{{ $order->itemsAreIncluded() ? __('Included') : '₹'.number_format((float) $item->line_total, 2) }}</flux:text>
             </div>
         @endforeach
     </div>

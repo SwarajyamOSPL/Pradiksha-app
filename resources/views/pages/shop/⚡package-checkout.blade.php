@@ -56,11 +56,7 @@ new #[Title('Checkout')] class extends Component
 
     private function totals(): OrderTotals
     {
-        $subtotal = $this->package->products->sum(
-            fn (Product $product) => (float) ($product->price ?? 0) * $product->pivot->quantity,
-        );
-
-        $breakdown = Package::priceBreakdown($subtotal, $this->package->discount_type, (float) $this->package->discount_value);
+        $breakdown = $this->package->checkoutBreakdown();
 
         return OrderTotals::calculate($breakdown['subtotal'], $breakdown['discount']);
     }
@@ -84,7 +80,9 @@ new #[Title('Checkout')] class extends Component
         @foreach ($package->products as $product)
             <div class="flex items-center justify-between border-b border-zinc-200 pb-2 dark:border-zinc-800">
                 <flux:text>{{ $product->name }} &times;{{ $product->pivot->quantity }}</flux:text>
-                <flux:text class="font-medium">₹{{ number_format((float) ($product->price ?? 0) * $product->pivot->quantity, 2) }}</flux:text>
+                <flux:text class="font-medium">
+                    {{ $package->hasFixedPrice() ? __('Included') : '₹'.number_format((float) ($product->price ?? 0) * $product->pivot->quantity, 2) }}
+                </flux:text>
             </div>
         @endforeach
     </div>

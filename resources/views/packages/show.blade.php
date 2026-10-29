@@ -16,46 +16,37 @@
                 <flux:heading size="xl" class="text-brand-950 dark:text-cream-50">{{ $package->name }}</flux:heading>
 
                 <div class="mt-4">
-                    @auth
-                        @if (auth()->user()->isApproved())
-                            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                                <flux:heading size="lg" class="text-brand-700 dark:text-brand-300">₹{{ number_format((float) $package->price, 2) }}</flux:heading>
-                                @if ($package->hasDiscount())
-                                    <flux:text class="text-brand-400 line-through">₹{{ number_format((float) $package->subtotal, 2) }}</flux:text>
-                                    <flux:badge size="sm" color="green" variant="solid">
-                                        {{ __('Save ₹:amount (:percent% off)', ['amount' => number_format($package->discountAmount(), 2), 'percent' => $package->discountPercentage()]) }}
-                                    </flux:badge>
-                                @endif
-                            </div>
-
-                            @if ($package->isAvailable())
-                                <flux:button :href="route('packages.checkout', $package)" variant="primary" icon="shopping-cart" class="mt-4" wire:navigate>
-                                    {{ __('Order this Package') }}
-                                </flux:button>
-                            @else
-                                <flux:callout icon="no-symbol" color="red" class="mt-4">
-                                    <flux:callout.heading>{{ __('Currently out of stock') }}</flux:callout.heading>
-                                    <flux:callout.text>
-                                        {{ $package->products->isEmpty() ? __('This package has no products yet.') : \App\Support\StockCheck::message($package->stockShortages()) }}
-                                    </flux:callout.text>
-                                </flux:callout>
-                            @endif
-                        @else
-                            <flux:callout icon="clock" color="amber">
-                                <flux:callout.heading>{{ __('Your account is awaiting approval') }}</flux:callout.heading>
-                                <flux:callout.text>{{ __("You'll see pricing and be able to order once an admin approves your account.") }}</flux:callout.text>
-                            </flux:callout>
+                    {{-- Package prices are public, so anyone can see what a package costs before choosing it. --}}
+                    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <flux:heading size="lg" class="text-brand-700 dark:text-brand-300">₹{{ number_format((float) $package->price, 2) }}</flux:heading>
+                        @if ($package->hasDiscount())
+                            <flux:text class="text-brand-400 line-through">₹{{ number_format((float) $package->subtotal, 2) }}</flux:text>
+                            <flux:badge size="sm" color="green" variant="solid">
+                                {{ __('Save ₹:amount (:percent% off)', ['amount' => number_format($package->discountAmount(), 2), 'percent' => $package->discountPercentage()]) }}
+                            </flux:badge>
                         @endif
-                    @else
-                        <flux:callout icon="lock-closed" color="green">
-                            <flux:callout.heading>{{ __('Login to see price and order') }}</flux:callout.heading>
+                    </div>
+
+                    @if (! $package->isAvailable())
+                        <flux:callout icon="no-symbol" color="red" class="mt-4">
+                            <flux:callout.heading>{{ __('Currently out of stock') }}</flux:callout.heading>
                             <flux:callout.text>
-                                <flux:link :href="route('login')" wire:navigate>{{ __('Log in') }}</flux:link>
-                                {{ __('or') }}
-                                <flux:link :href="route('register')" wire:navigate>{{ __('register as a franchise holder') }}</flux:link>.
+                                {{ $package->products->isEmpty() ? __('This package has no products yet.') : \App\Support\StockCheck::message($package->stockShortages()) }}
                             </flux:callout.text>
                         </flux:callout>
-                    @endauth
+                    @elseif (! auth()->check())
+                        <flux:button :href="route('register', ['package' => $package->slug])" variant="primary" icon-trailing="arrow-right" class="mt-4" wire:navigate>
+                            {{ __('Select this package') }}
+                        </flux:button>
+                        <flux:text size="sm" class="mt-2">
+                            {{ __('You will register, then go straight to payment.') }}
+                            <flux:link :href="route('login')" wire:navigate>{{ __('Already have an account? Log in') }}</flux:link>
+                        </flux:text>
+                    @elseif (auth()->user()->isFranchiseHolder())
+                        <flux:button :href="route('packages.checkout', $package)" variant="primary" icon="shopping-cart" class="mt-4" wire:navigate>
+                            {{ __('Order this Package') }}
+                        </flux:button>
+                    @endif
                 </div>
 
                 @if ($package->description)
@@ -65,11 +56,16 @@
                 <flux:heading size="lg" class="mt-8 text-brand-950 dark:text-cream-50">{{ __("What's included") }}</flux:heading>
                 <ul class="mt-3 space-y-2">
                     @foreach ($package->products as $product)
-                        <li class="flex items-center justify-between border-b border-brand-100 pb-2 dark:border-brand-800">
-                            <flux:link :href="route('products.show', $product)" wire:navigate>{{ $product->name }}</flux:link>
-                            <flux:text class="text-brand-500 dark:text-brand-400">
+                        <li class="flex items-center gap-3 border-b border-brand-100 pb-2 dark:border-brand-800">
+                            <div class="size-12 shrink-0 overflow-hidden rounded-lg bg-brand-50 ring-1 ring-brand-100 dark:bg-brand-950 dark:ring-brand-800">
+                                @if ($product->image_path)
+                                    <img src="{{ Storage::url($product->image_path) }}" alt="{{ $product->name }}" loading="lazy" class="h-full w-full object-cover" />
+                                @endif
+                            </div>
+                            <flux:link :href="route('products.show', $product)" wire:navigate class="grow">{{ $product->name }}</flux:link>
+                            <flux:text class="shrink-0 text-brand-500 dark:text-brand-400">
                                 &times;{{ $product->pivot->quantity }}
-                                @if (auth()->check() && auth()->user()->isApproved() && (float) $product->price > 0)
+                                @if (! $package->hasFixedPrice() && auth()->check() && auth()->user()->isApproved() && (float) $product->price > 0)
                                     &middot; ₹{{ number_format((float) $product->price * $product->pivot->quantity, 2) }}
                                 @endif
                             </flux:text>

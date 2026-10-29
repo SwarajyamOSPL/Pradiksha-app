@@ -30,6 +30,7 @@ trait PackageValidationRules
                 'nullable', 'numeric', 'min:0',
                 Rule::when($this->discount_type === DiscountType::Percent->value, ['max:100']),
             ],
+            'fixed_price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'is_active' => ['boolean'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'products' => ['array'],

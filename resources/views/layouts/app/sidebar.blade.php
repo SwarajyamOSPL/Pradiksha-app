@@ -11,10 +11,20 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
+                {{-- Franchise holders get a short menu of their own: overview, products, cart and order history. --}}
                 @if (auth()->user()->isFranchiseHolder())
-                    <flux:sidebar.group :heading="__('Platform')" class="grid">
+                    <flux:sidebar.group :heading="__('My Franchise')" class="grid">
                         <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                             {{ __('Dashboard') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="shopping-bag" :href="route('member.products')" :current="request()->routeIs('member.products')" wire:navigate>
+                            {{ __('Products') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="shopping-cart" :href="route('cart.index')" :badge="app(\App\Support\Cart::class)->count() ?: null" badge:color="green" wire:navigate>
+                            {{ __('Cart') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="receipt-percent" :href="route('orders.index')" :current="request()->routeIs('orders.*')" wire:navigate>
+                            {{ __('Order History') }}
                         </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
@@ -38,23 +48,6 @@
                         </flux:sidebar.item>
                         <flux:sidebar.item icon="receipt-percent" :href="route('admin.orders.index')" :current="request()->routeIs('admin.orders.*')" :badge="auth()->user()->unreadNotifications()->count() ?: null" badge:color="green" wire:navigate>
                             {{ __('Orders') }}
-                        </flux:sidebar.item>
-                    </flux:sidebar.group>
-                @endif
-
-                @if (auth()->user()->isFranchiseHolder())
-                    <flux:sidebar.group :heading="__('Shop')" class="grid">
-                        <flux:sidebar.item icon="shopping-bag" :href="route('products.index')" wire:navigate>
-                            {{ __('Products') }}
-                        </flux:sidebar.item>
-                        <flux:sidebar.item icon="archive-box" :href="route('packages.index')" wire:navigate>
-                            {{ __('Packages') }}
-                        </flux:sidebar.item>
-                        <flux:sidebar.item icon="shopping-cart" :href="route('cart.index')" wire:navigate>
-                            {{ __('Basket') }}
-                        </flux:sidebar.item>
-                        <flux:sidebar.item icon="receipt-percent" :href="route('orders.index')" :current="request()->routeIs('orders.*')" wire:navigate>
-                            {{ __('My Orders') }}
                         </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif

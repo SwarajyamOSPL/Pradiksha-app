@@ -75,7 +75,7 @@ new #[Title('Create Package')] class extends Component
         $validated = $this->validate($this->packageRules());
 
         $package = Package::create([
-            ...collect($validated)->except(['image', 'products', 'discount_type', 'discount_value'])->toArray(),
+            ...collect($validated)->except(['image', 'products', 'discount_type', 'discount_value', 'fixed_price'])->toArray(),
             ...$this->discountAttributes(),
         ]);
 

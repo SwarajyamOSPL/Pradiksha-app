@@ -7,7 +7,11 @@
 
     <flux:textarea wire:model="description" :label="__('Description')" rows="4" />
 
-    <flux:input wire:model="price" :label="__('Price (₹)')" type="number" step="0.01" min="0" description="{{ __('Visible to logged-in franchise holders only.') }}" />
+    <div class="grid gap-6 sm:grid-cols-2">
+        <flux:input wire:model="price" :label="__('Offer price (₹)')" type="number" step="0.01" min="0" description="{{ __('What franchise holders pay. Visible to logged-in franchise holders only.') }}" />
+
+        <flux:input wire:model="mrp" :label="__('MRP (₹), optional')" type="number" step="0.01" min="0" description="{{ __('The printed retail price. Shown crossed out beside the offer price.') }}" />
+    </div>
 
     <flux:input wire:model="stock" :label="__('Stock in hand')" type="number" step="1" min="0" required description="{{ __('Franchise holders can only order a product while it is in stock. 0 means out of stock.') }}" />
 

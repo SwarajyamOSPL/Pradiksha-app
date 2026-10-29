@@ -17,11 +17,59 @@ new #[Title('Order Details')] class extends Component
 
     public string $paymentStatus = '';
 
+    public string $courierName = '';
+
+    public string $awbNumber = '';
+
+    public string $trackingUrl = '';
+
     public function mount(Order $order): void
     {
         $this->order = $order->load('items', 'package', 'user');
         $this->status = $order->status->value;
         $this->paymentStatus = $order->payment_status->value;
+        $this->courierName = (string) $order->courier_name;
+        $this->awbNumber = (string) $order->awb_number;
+        $this->trackingUrl = (string) $order->tracking_url;
+    }
+
+    /**
+     * Save the courier, AWB number and tracking link once the order has been dispatched. The first
+     * time they are saved the order is marked as shipped, unless it is already further along.
+     */
+    public function saveShipping(): void
+    {
+        if (! $this->order->isPaid()) {
+            Flux::toast(variant: 'danger', text: __('Only paid orders can be dispatched.'));
+
+            return;
+        }
+
+        $validated = $this->validate([
+            'courierName' => ['nullable', 'string', 'max:100'],
+            'awbNumber' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9\-_\/ ]+$/'],
+            'trackingUrl' => ['nullable', 'url:http,https', 'max:2048'],
+        ], attributes: [
+            'courierName' => __('courier'),
+            'awbNumber' => __('AWB number'),
+            'trackingUrl' => __('tracking link'),
+        ]);
+
+        $firstDispatch = ! $this->order->isDispatched();
+
+        $this->order->update([
+            'courier_name' => filled($validated['courierName']) ? trim($validated['courierName']) : null,
+            'awb_number' => trim($validated['awbNumber']),
+            'tracking_url' => filled($validated['trackingUrl']) ? trim($validated['trackingUrl']) : null,
+            'dispatched_at' => $this->order->dispatched_at ?? now(),
+        ]);
+
+        if ($firstDispatch && in_array($this->order->status, [OrderStatus::Confirmed, OrderStatus::Processing], true)) {
+            $this->order->update(['status' => OrderStatus::Shipped]);
+            $this->status = OrderStatus::Shipped->value;
+        }
+
+        Flux::toast(variant: 'success', text: __('Shipping details saved.'));
     }
 
     public function updateOrder(MarkOrderAsPaid $markOrderAsPaid): void
@@ -83,7 +131,7 @@ new #[Title('Order Details')] class extends Component
         @foreach ($order->items as $item)
             <div class="flex items-center justify-between border-b border-zinc-200 pb-2 dark:border-zinc-800">
                 <flux:text>{{ $item->product_name }} &times;{{ $item->quantity }}</flux:text>
-                <flux:text class="font-medium">₹{{ number_format((float) $item->line_total, 2) }}</flux:text>
+                <flux:text class="font-medium">{{ $order->itemsAreIncluded() ? __('Included') : '₹'.number_format((float) $item->line_total, 2) }}</flux:text>
             </div>
         @endforeach
     </div>
@@ -155,4 +203,27 @@ new #[Title('Order Details')] class extends Component
     </div>
 
     <flux:button variant="primary" class="mt-4" wire:click="updateOrder">{{ __('Update Order') }}</flux:button>
+
+    @if ($order->isPaid())
+        <flux:card class="mt-10">
+            <flux:heading size="lg">{{ __('Shipping details') }}</flux:heading>
+            <flux:text class="mt-1">
+                {{ __('Once the order has been dispatched, save the AWB number and tracking link here. The franchise holder sees them on their order, and a first save marks the order as shipped.') }}
+            </flux:text>
+
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="courierName" :label="__('Courier (optional)')" type="text" placeholder="{{ __('e.g. Delhivery, DTDC') }}" />
+                <flux:input wire:model="awbNumber" :label="__('AWB number')" type="text" required />
+            </div>
+
+            <flux:input wire:model="trackingUrl" :label="__('Tracking link (optional)')" type="url" class="mt-4" placeholder="https://" description="{{ __('The page where this AWB number can be tracked.') }}" />
+
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <flux:button variant="primary" wire:click="saveShipping">{{ __('Save shipping details') }}</flux:button>
+                @if ($order->dispatched_at)
+                    <flux:text size="sm">{{ __('Dispatched on :date', ['date' => $order->dispatched_at->format('d M Y, h:i A')]) }}</flux:text>
+                @endif
+            </div>
+        </flux:card>
+    @endif
 </section>

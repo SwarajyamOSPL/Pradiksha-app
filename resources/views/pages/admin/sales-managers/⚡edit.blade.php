@@ -18,6 +18,8 @@ new #[Title('Edit Sales Manager')] class extends Component
 
     public string $email = '';
 
+    public string $phone = '';
+
     public string $password = '';
 
     public string $password_confirmation = '';
@@ -29,18 +31,21 @@ new #[Title('Edit Sales Manager')] class extends Component
         $this->salesManager = $salesManager;
         $this->name = $salesManager->name;
         $this->email = $salesManager->email;
+        $this->phone = (string) $salesManager->phone;
     }
 
     public function save(): void
     {
         $validated = $this->validate([
             ...$this->profileRules($this->salesManager->id),
+            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{7,20}$/'],
             'password' => ['nullable', 'string', Password::default(), 'confirmed'],
         ]);
 
         $this->salesManager->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'phone' => $validated['phone'],
             ...(filled($validated['password']) ? ['password' => $validated['password']] : []),
         ]);
 
@@ -61,6 +66,7 @@ new #[Title('Edit Sales Manager')] class extends Component
     <form wire:submit="save" class="mt-6 flex flex-col gap-6">
         <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus />
         <flux:input wire:model="email" :label="__('Email')" type="email" required />
+        <flux:input wire:model="phone" :label="__('Contact number')" type="tel" required description="{{ __('Shown to the franchise holders this sales manager looks after.') }}" />
         <flux:input wire:model="password" :label="__('New password')" type="password" description="{{ __('Leave blank to keep the current password.') }}" viewable />
         <flux:input wire:model="password_confirmation" :label="__('Confirm new password')" type="password" viewable />
 

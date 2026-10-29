@@ -164,16 +164,19 @@ test('admin can set a product price from the products list', function () {
     expect((float) $product->refresh()->price)->toBe(249.5);
 });
 
-test('guests and approved partners see the package discount on the storefront', function () {
+test('package prices and discounts are public, while individual product prices stay hidden from guests', function () {
     $package = Package::factory()->create(['name' => 'Festival Pack', 'discount_type' => DiscountType::Percent, 'discount_value' => 20]);
-    $product = Product::factory()->create(['price' => 500]);
+    $product = Product::factory()->create(['name' => 'Festival Oil', 'price' => 500]);
     $package->products()->attach($product, ['quantity' => 1]);
     $package->refreshPrice();
 
     $this->get(route('packages.show', $package))
         ->assertOk()
-        ->assertDontSee('₹400.00')
-        ->assertDontSee('20% off');
+        ->assertSee('₹400.00')
+        ->assertSee('20% off')
+        ->assertSee('Festival Oil');
+
+    $this->get(route('products.show', $product))->assertOk()->assertDontSee('500.00');
 
     $this->actingAs(User::factory()->create())
         ->get(route('packages.show', $package))
