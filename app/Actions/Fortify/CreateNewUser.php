@@ -27,15 +27,28 @@ class CreateNewUser implements CreatesNewUsers
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
             ...$this->franchiseHolderRules(),
-        ])->validate();
+            'package' => ['required', 'string'],
+        ], [
+            'package.required' => __('Please choose a package to register.'),
+        ])->after(function ($validator) use ($input): void {
+            if ($validator->errors()->has('package')) {
+                return;
+            }
 
-        // Someone who chose a package on the packages page pays for it right after signing up.
-        $package = filled($input['package'] ?? null)
-            ? Package::query()->active()->where('slug', $input['package'])->first()
-            : null;
+            $package = Package::query()->active()->with('products')->where('slug', $input['package'])->first();
+
+            if (! $package) {
+                $validator->errors()->add('package', __('Please choose a package to register.'));
+            } elseif (! $package->isAvailable()) {
+                $validator->errors()->add('package', __('That package is out of stock right now.'));
+            }
+        })->validate();
+
+        // Registering means buying a package, so they pay for it right after signing up.
+        $package = Package::query()->active()->where('slug', $input['package'])->firstOrFail();
 
         return User::create([
-            'signup_package_id' => $package?->id,
+            'signup_package_id' => $package->id,
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],

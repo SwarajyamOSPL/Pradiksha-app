@@ -27,7 +27,6 @@
                         <flux:button :href="route('dashboard')" variant="primary" wire:navigate>{{ __('Dashboard') }}</flux:button>
                     @else
                         <flux:button :href="route('login')" variant="ghost" wire:navigate>{{ __('Log in') }}</flux:button>
-                        <flux:button :href="route('register')" variant="primary" wire:navigate>{{ __('Register') }}</flux:button>
                     @endauth
                 </div>
 
@@ -49,7 +48,6 @@
                         <flux:button :href="route('dashboard')" variant="primary" wire:navigate>{{ __('Dashboard') }}</flux:button>
                     @else
                         <flux:button :href="route('login')" variant="ghost" wire:navigate>{{ __('Log in') }}</flux:button>
-                        <flux:button :href="route('register')" variant="primary" wire:navigate>{{ __('Register') }}</flux:button>
                     @endauth
                 </div>
             </div>
@@ -96,7 +94,7 @@
                         <ul class="mt-4 space-y-2">
                             <li><flux:link :href="route('franchise')" variant="subtle" wire:navigate>{{ __('Franchise Model') }}</flux:link></li>
                             @guest
-                                <li><flux:link :href="route('register')" variant="subtle" wire:navigate>{{ __('Become a Franchise Partner') }}</flux:link></li>
+                                <li><flux:link :href="route('packages.index')" variant="subtle" wire:navigate>{{ __('Become a Franchise Partner') }}</flux:link></li>
                                 <li><flux:link :href="route('login')" variant="subtle" wire:navigate>{{ __('Log in') }}</flux:link></li>
                             @else
                                 <li><flux:link :href="route('dashboard')" variant="subtle" wire:navigate>{{ __('Dashboard') }}</flux:link></li>

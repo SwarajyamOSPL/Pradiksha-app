@@ -19,8 +19,8 @@
 
             <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
                 @guest
-                    <flux:button :href="route('register')" variant="primary" icon="pencil-square" wire:navigate>
-                        {{ __('Become a Franchise Partner') }}
+                    <flux:button :href="route('packages.index')" variant="primary" icon="archive-box" wire:navigate>
+                        {{ __('Choose a Package') }}
                     </flux:button>
                     <flux:button :href="route('login')" variant="filled" wire:navigate>
                         {{ __('Log in') }}
@@ -71,8 +71,8 @@
 
             <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ([
-                    ['icon' => 'pencil-square', 'title' => __('Register'), 'text' => __('Create your account with your business details in a couple of minutes.')],
-                    ['icon' => 'check-badge', 'title' => __('Get approved'), 'text' => __('Our team reviews your application and approves your franchise account.')],
+                    ['icon' => 'archive-box', 'title' => __('Choose a package'), 'text' => __('Pick the Basic, Mini or Super package and see every product inside it.')],
+                    ['icon' => 'credit-card', 'title' => __('Register and pay'), 'text' => __('Create your account with your business details, then pay securely online. Your account is approved once your payment succeeds.')],
                     ['icon' => 'user-group', 'title' => __('Meet your manager'), 'text' => __('You are assigned a sales manager who supports you from day one.')],
                     ['icon' => 'truck', 'title' => __('Order and grow'), 'text' => __('See franchise pricing, order packages or a custom basket, and track your orders.')],
                 ] as $index => $step)
@@ -115,10 +115,10 @@
 
         <div class="mt-8 divide-y divide-brand-100 rounded-xl border border-brand-100 bg-white dark:divide-brand-800 dark:border-brand-800 dark:bg-brand-950">
             @foreach ([
-                ['q' => __('Why can I not see prices?'), 'a' => __('Prices are shown only to approved franchise partners. Browse the catalogue freely, then register and get approved to see your franchise pricing.')],
-                ['q' => __('How long does approval take?'), 'a' => __('Our team reviews each application manually. You will be able to see pricing and place orders as soon as your account is approved.')],
+                ['q' => __('Why can I not see prices?'), 'a' => __('Product prices are shown only to franchise partners. Browse the catalogue freely, then choose a package to become a partner and see your offer prices.')],
+                ['q' => __('How do I become a franchise partner?'), 'a' => __('Choose a package, register and pay online. Your account is approved as soon as your payment succeeds, and you can then see offer prices and place orders.')],
                 ['q' => __('Can I order individual products?'), 'a' => __('Yes. You can order a curated package as-is, or build your own basket from individual products.')],
-                ['q' => __('Who can I contact for help?'), 'a' => __('Once approved, you are assigned a sales manager who can help with products and orders.')],
+                ['q' => __('Who can I contact for help?'), 'a' => __('Once you are a partner, you are assigned a sales manager who can help with products and orders.')],
             ] as $faq)
                 <details class="group p-5">
                     <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-brand-950 dark:text-cream-50">
@@ -135,9 +135,9 @@
         <section class="mx-auto max-w-6xl px-6">
             <div class="rounded-2xl bg-brand-700 px-6 py-12 text-center text-white sm:px-12 dark:bg-brand-800">
                 <flux:heading size="xl" class="text-white">{{ __('Ready to become a franchise partner?') }}</flux:heading>
-                <p class="mx-auto mt-3 max-w-xl text-brand-100">{{ __('Register today and our team will review your application.') }}</p>
+                <p class="mx-auto mt-3 max-w-xl text-brand-100">{{ __('Choose a package, register and pay online to get started.') }}</p>
                 <div class="mt-6 flex flex-wrap items-center justify-center gap-4">
-                    <flux:button :href="route('register')" variant="filled" class="bg-white! text-brand-800!" wire:navigate>{{ __('Register now') }}</flux:button>
+                    <flux:button :href="route('packages.index')" variant="filled" class="bg-white! text-brand-800!" wire:navigate>{{ __('View packages') }}</flux:button>
                     <flux:button :href="route('login')" variant="ghost" class="text-white!" wire:navigate>{{ __('I already have an account') }}</flux:button>
                 </div>
             </div>

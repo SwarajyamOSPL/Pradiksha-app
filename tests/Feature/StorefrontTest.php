@@ -87,13 +87,14 @@ test('package show page lists included products', function () {
         ->assertSee('Bundled Product');
 });
 
-test('franchise page loads for guests with registration calls to action', function () {
+test('franchise page loads for guests with calls to action that lead to the packages', function () {
     $this->get(route('franchise'))
         ->assertOk()
         ->assertSee('Franchise Model')
-        ->assertSee('Become a Franchise Partner')
-        ->assertSee(route('register'))
-        ->assertSee(route('login'));
+        ->assertSee('Choose a Package')
+        ->assertSee(route('packages.index'))
+        ->assertSee(route('login'))
+        ->assertDontSee(route('register'));
 });
 
 test('franchise page does not show registration prompts to logged in partners', function () {

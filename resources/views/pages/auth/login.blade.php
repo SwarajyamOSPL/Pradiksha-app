@@ -50,12 +50,10 @@
             </div>
         </form>
 
-        @if (Route::has('register'))
-            <flux:text class="text-center">
-                {{ __("Don't have an account?") }}
-                <flux:link :href="route('register')" wire:navigate>{{ __('Register as a franchise holder') }}</flux:link>
-            </flux:text>
-        @endif
+        <flux:text class="text-center">
+            {{ __('Want to become a franchise partner?') }}
+            <flux:link :href="route('packages.index')" wire:navigate>{{ __('View franchise packages') }}</flux:link>
+        </flux:text>
 
         <flux:text class="text-center">
             {{ __('Part of the sales team?') }}

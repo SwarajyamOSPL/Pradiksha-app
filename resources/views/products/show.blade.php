@@ -56,7 +56,7 @@
                             <flux:callout.text>
                                 <flux:link :href="route('login')" wire:navigate>{{ __('Log in') }}</flux:link>
                                 {{ __('or') }}
-                                <flux:link :href="route('register')" wire:navigate>{{ __('register as a franchise holder') }}</flux:link>.
+                                <flux:link :href="route('packages.index')" wire:navigate>{{ __('choose a franchise package') }}</flux:link>.
                             </flux:callout.text>
                         </flux:callout>
                     @endauth

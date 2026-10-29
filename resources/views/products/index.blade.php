@@ -6,7 +6,8 @@
             <flux:callout icon="lock-closed" color="green" class="mt-4">
                 <flux:callout.heading>{{ __('Prices are for franchise holders only') }}</flux:callout.heading>
                 <flux:callout.text>
-                    {{ __('Register and get approved to see franchise pricing and place orders.') }}
+                    {{ __('Choose a franchise package to become a partner and see your offer prices.') }}
+                    <flux:link :href="route('packages.index')" wire:navigate>{{ __('View packages') }}</flux:link>
                 </flux:callout.text>
             </flux:callout>
         @endunless

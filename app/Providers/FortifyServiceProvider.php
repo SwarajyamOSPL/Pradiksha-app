@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\Package;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\JsonResponse;
@@ -145,7 +146,18 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureViews(): void
     {
         Fortify::loginView(fn () => view('pages::auth.login'));
-        Fortify::registerView(fn () => view('pages::auth.register'));
+        // Registration only happens when buying a package, so the form needs a package that can be bought.
+        Fortify::registerView(function (Request $request) {
+            $package = Package::query()->active()->with('products')->where('slug', (string) $request->query('package', $request->old('package')))->first();
+
+            if (! $package?->isAvailable()) {
+                return redirect()->route('packages.index')->with('status', $package
+                    ? __('The :name package is out of stock right now. Please choose another package.', ['name' => $package->name])
+                    : __('Registration is part of buying a package. Choose a package to get started.'));
+            }
+
+            return view('pages::auth.register', ['selectedPackage' => $package]);
+        });
         Fortify::verifyEmailView(fn () => view('pages::auth.verify-email'));
         Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));
         Fortify::requestPasswordResetLinkView(fn () => view('pages::auth.forgot-password'));

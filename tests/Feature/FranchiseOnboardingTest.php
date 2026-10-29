@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
-test('after signing up the new franchise holder is told the request went to the admin', function () {
+test('someone cannot register without choosing a package', function () {
     $this->post(route('register.store'), [
         'name' => 'Asha Verma',
         'email' => 'asha@example.com',
@@ -25,11 +25,11 @@ test('after signing up the new franchise holder is told the request went to the 
         'city' => 'Pune',
         'state' => 'Maharashtra',
         'pincode' => '411001',
-    ])->assertRedirect(route('login'));
+    ])->assertSessionHasErrors('package');
 
     $this->assertGuest();
 
-    $this->get(route('login'))->assertSee('Your request has been sent to our admin for approval');
+    expect(User::where('email', 'asha@example.com')->exists())->toBeFalse();
 });
 
 test('a pending franchise holder cannot log in and is told why', function () {

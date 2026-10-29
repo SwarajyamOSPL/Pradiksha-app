@@ -248,22 +248,21 @@ test('the register page says which package is being bought', function () {
         ->assertSee('name="package" value="basic"', false);
 });
 
-test('an unknown or inactive package is ignored on the register page', function () {
+test('an unknown or inactive package sends the visitor back to the packages page', function () {
     seedPackages();
     Package::where('slug', 'mini')->update(['is_active' => false]);
 
-    $this->get(route('register', ['package' => 'nope']))->assertOk()->assertDontSee('Register to buy')->assertDontSee('name="package"', false);
-    $this->get(route('register', ['package' => 'mini']))->assertOk()->assertDontSee('Register to buy');
+    $this->get(route('register', ['package' => 'nope']))->assertRedirect(route('packages.index'));
+    $this->get(route('register', ['package' => 'mini']))->assertRedirect(route('packages.index'));
 });
 
-test('the register page explains when the chosen package is out of stock', function () {
+test('the visitor is told when the chosen package is out of stock', function () {
     seedPackages();
     Product::where('slug', 'sar-balm')->update(['stock' => 0]);
 
     $this->get(route('register', ['package' => 'basic']))
-        ->assertOk()
-        ->assertSee('The Basic package is out of stock right now')
-        ->assertDontSee('name="package"', false);
+        ->assertRedirect(route('packages.index'))
+        ->assertSessionHas('status', 'The Basic package is out of stock right now. Please choose another package.');
 });
 
 function registrationDetails(array $overrides = []): array
@@ -299,22 +298,22 @@ test('registering through a package logs the user in and sends them straight to 
     $this->assertAuthenticatedAs($user);
 });
 
-test('registering without a package still waits for admin approval and is not logged in', function () {
+test('registering without a package is refused', function () {
     seedPackages();
 
-    $this->post(route('register.store'), registrationDetails())->assertRedirect(route('login'));
+    $this->post(route('register.store'), registrationDetails())->assertSessionHasErrors('package');
 
-    expect(User::where('email', 'asha@example.com')->firstOrFail()->signup_package_id)->toBeNull();
+    expect(User::where('email', 'asha@example.com')->exists())->toBeFalse();
 
     $this->assertGuest();
 });
 
-test('an invalid package in the signup is ignored', function () {
+test('an invalid package in the signup is refused', function () {
     seedPackages();
 
-    $this->post(route('register.store'), registrationDetails(['package' => 'nope']))->assertRedirect(route('login'));
+    $this->post(route('register.store'), registrationDetails(['package' => 'nope']))->assertSessionHasErrors('package');
 
-    expect(User::where('email', 'asha@example.com')->firstOrFail()->signup_package_id)->toBeNull();
+    expect(User::where('email', 'asha@example.com')->exists())->toBeFalse();
 
     $this->assertGuest();
 });

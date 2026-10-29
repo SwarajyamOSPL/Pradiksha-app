@@ -29,7 +29,7 @@
                 </flux:button>
 
                 @guest
-                    <flux:button :href="route('register')" variant="filled" wire:navigate>
+                    <flux:button :href="route('packages.index')" variant="filled" wire:navigate>
                         {{ __('Become a Franchise Partner') }}
                     </flux:button>
                 @endguest
@@ -58,8 +58,8 @@
 
             <div class="mt-10 grid gap-6 sm:grid-cols-3">
                 @foreach ([
-                    ['icon' => 'pencil-square', 'title' => __('Register'), 'text' => __('Sign up with your business details in a couple of minutes.')],
-                    ['icon' => 'check-badge', 'title' => __('Get Approved'), 'text' => __('Our team reviews and approves your franchise account.')],
+                    ['icon' => 'archive-box', 'title' => __('Choose a Package'), 'text' => __('Pick the Basic, Mini or Super package, then register and pay online.')],
+                    ['icon' => 'check-badge', 'title' => __('Get Approved'), 'text' => __('Your franchise account is approved as soon as your payment succeeds.')],
                     ['icon' => 'truck', 'title' => __('Start Ordering'), 'text' => __('See franchise pricing, order curated packages, or build your own basket.')],
                 ] as $index => $step)
                     <flux:card class="border-brand-100 bg-white text-center dark:border-brand-800 dark:bg-brand-950">
