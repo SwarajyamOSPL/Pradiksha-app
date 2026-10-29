@@ -121,6 +121,23 @@ test('home page shows the slider images as a carousel', function () {
     }
 });
 
+test('carousel images carry a version stamp so a replaced banner is not served from the browser cache', function () {
+    $file = public_path('images/sliders/therapy-range.webp');
+    $original = filemtime($file);
+
+    try {
+        touch($file, 1_700_000_000);
+
+        $this->get(route('home'))->assertOk()->assertSee('images/sliders/therapy-range.webp?v=1700000000', false);
+
+        touch($file, 1_800_000_000);
+
+        $this->get(route('home'))->assertOk()->assertSee('images/sliders/therapy-range.webp?v=1800000000', false);
+    } finally {
+        touch($file, $original);
+    }
+});
+
 test('home page does not show the category tag cloud', function () {
     Product::factory()->create(['category' => 'Distinctive Tag Category']);
 

@@ -1,5 +1,15 @@
 @props(['slides', 'interval' => 5000])
 
+@php
+    // Stamp each image address with the file's last-modified time, so replacing a banner under the
+    // same file name shows up straight away instead of the browser keeping the old picture.
+    $versioned = function (string $src): string {
+        $path = public_path(ltrim((string) parse_url($src, PHP_URL_PATH), '/'));
+
+        return is_file($path) ? $src.'?v='.filemtime($path) : $src;
+    };
+@endphp
+
 <div
     {{ $attributes->class('group relative w-full overflow-hidden bg-brand-50 dark:bg-brand-900') }}
     x-data="{
@@ -63,7 +73,7 @@
                 :aria-hidden="active !== {{ $index }}"
             >
                 <img
-                    src="{{ $slide['src'] }}"
+                    src="{{ $versioned($slide['src']) }}"
                     alt="{{ $slide['alt'] }}"
                     width="1672"
                     height="941"
