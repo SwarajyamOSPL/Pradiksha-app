@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureUserHasRole::class,
             'approved' => EnsureAccountIsApproved::class,
         ]);
+
+        // Logged-out visitors to the sales area are sent to the sales team login, everyone else to the main login.
+        $middleware->redirectGuestsTo(
+            fn (Request $request) => $request->is('sales', 'sales/*') ? route('sales.login') : route('login'),
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

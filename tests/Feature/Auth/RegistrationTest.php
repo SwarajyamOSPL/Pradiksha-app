@@ -10,6 +10,19 @@ test('registration screen can be rendered', function () {
     $response->assertOk();
 });
 
+test('the registration form uses a wide card while login keeps the compact one', function () {
+    $this->get(route('register'))->assertOk()->assertSee('flex-col gap-2 max-w-xl', false);
+    $this->get(route('login'))->assertOk()->assertSee('flex-col gap-2 max-w-sm', false);
+});
+
+test('fields in the registration form do not stretch to the height of their neighbour', function () {
+    $html = $this->get(route('register'))->assertOk()->getContent();
+
+    // Side-by-side fields (passwords, city/state/pincode) must align to the top so an error
+    // message under one cannot push its neighbour's input down.
+    expect(substr_count($html, 'items-start'))->toBeGreaterThanOrEqual(2);
+});
+
 test('the franchise name is asked for right after the full name', function () {
     $this->get(route('register'))
         ->assertOk()

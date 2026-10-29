@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
+Route::view('sales/login', 'pages.auth.sales-login')->middleware('guest')->name('sales.login');
+
 Route::middleware(['auth', 'verified', 'approved', 'role:sales_manager'])
     ->prefix('sales')
     ->name('sales.')

@@ -56,5 +56,10 @@
                 <flux:link :href="route('register')" wire:navigate>{{ __('Register as a franchise holder') }}</flux:link>
             </flux:text>
         @endif
+
+        <flux:text class="text-center">
+            {{ __('Part of the sales team?') }}
+            <flux:link :href="route('sales.login')" wire:navigate>{{ __('Sales team login') }}</flux:link>
+        </flux:text>
     </div>
 </x-layouts::auth>

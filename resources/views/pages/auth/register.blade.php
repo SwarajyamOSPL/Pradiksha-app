@@ -1,4 +1,4 @@
-<x-layouts::auth :title="__('Register')">
+<x-layouts::auth :title="__('Register')" wide>
     <div class="flex flex-col gap-6">
         <x-auth-header :title="__('Become a Pradiksha franchise holder')" :description="__('Register to view product pricing and place orders. An admin will review and approve your account.')" />
 
@@ -37,7 +37,7 @@
                 placeholder="email@example.com"
             />
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
                 <flux:input
                     name="password"
                     :label="__('Password')"
@@ -77,7 +77,7 @@
                 autocomplete="street-address"
             />
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
                 <flux:input name="city" :label="__('City')" :value="old('city')" type="text" required autocomplete="address-level2" />
                 <flux:input name="state" :label="__('State')" :value="old('state')" type="text" required autocomplete="address-level1" />
                 <flux:input name="pincode" :label="__('Pincode')" :value="old('pincode')" type="text" required autocomplete="postal-code" />

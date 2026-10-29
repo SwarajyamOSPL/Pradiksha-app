@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -50,6 +51,20 @@ class FortifyServiceProvider extends ServiceProvider
 
             if (! $user || ! Hash::check((string) $request->input('password'), $user->password)) {
                 return null;
+            }
+
+            // Sales managers have their own login page (/sales/login), which marks its form with portal=sales.
+            $usedSalesPortal = $request->input('portal') === 'sales';
+            $isSalesManager = $user->role === UserRole::SalesManager;
+
+            if ($usedSalesPortal && ! $isSalesManager) {
+                return null;
+            }
+
+            if (! $usedSalesPortal && $isSalesManager) {
+                throw ValidationException::withMessages([
+                    Fortify::username() => __('Sales managers log in from the sales team login page: :url', ['url' => route('sales.login')]),
+                ]);
             }
 
             // Only reveal the account state once the password is right, so this can't be used to probe for accounts.
