@@ -18,7 +18,15 @@
                 <div class="mt-4">
                     @auth
                         @if (auth()->user()->isApproved())
-                            <flux:heading size="lg" class="text-brand-700 dark:text-brand-300">₹{{ number_format((float) $package->price, 2) }}</flux:heading>
+                            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                <flux:heading size="lg" class="text-brand-700 dark:text-brand-300">₹{{ number_format((float) $package->price, 2) }}</flux:heading>
+                                @if ($package->hasDiscount())
+                                    <flux:text class="text-brand-400 line-through">₹{{ number_format((float) $package->subtotal, 2) }}</flux:text>
+                                    <flux:badge size="sm" color="green" variant="solid">
+                                        {{ __('Save ₹:amount (:percent% off)', ['amount' => number_format($package->discountAmount(), 2), 'percent' => $package->discountPercentage()]) }}
+                                    </flux:badge>
+                                @endif
+                            </div>
 
                             <flux:button :href="route('packages.checkout', $package)" variant="primary" icon="shopping-cart" class="mt-4" wire:navigate>
                                 {{ __('Order this Package') }}
@@ -50,7 +58,12 @@
                     @foreach ($package->products as $product)
                         <li class="flex items-center justify-between border-b border-brand-100 pb-2 dark:border-brand-800">
                             <flux:link :href="route('products.show', $product)" wire:navigate>{{ $product->name }}</flux:link>
-                            <flux:text class="text-brand-500 dark:text-brand-400">&times;{{ $product->pivot->quantity }}</flux:text>
+                            <flux:text class="text-brand-500 dark:text-brand-400">
+                                &times;{{ $product->pivot->quantity }}
+                                @if (auth()->check() && auth()->user()->isApproved() && (float) $product->price > 0)
+                                    &middot; ₹{{ number_format((float) $product->price * $product->pivot->quantity, 2) }}
+                                @endif
+                            </flux:text>
                         </li>
                     @endforeach
                 </ul>

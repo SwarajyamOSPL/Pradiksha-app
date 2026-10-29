@@ -37,13 +37,20 @@ new #[Title('My Orders')] class extends Component
                         <flux:table.cell>#{{ $order->id }}</flux:table.cell>
                         <flux:table.cell>{{ $order->created_at->format('d M Y') }}</flux:table.cell>
                         <flux:table.cell class="capitalize">{{ $order->type->value }}</flux:table.cell>
-                        <flux:table.cell><flux:badge>{{ $order->status->label() }}</flux:badge></flux:table.cell>
-                        <flux:table.cell><flux:badge>{{ $order->payment_status->label() }}</flux:badge></flux:table.cell>
+                        <flux:table.cell><flux:badge size="sm" :color="$order->status->color()">{{ $order->status->label() }}</flux:badge></flux:table.cell>
+                        <flux:table.cell><flux:badge size="sm" :color="$order->isPaid() ? 'green' : 'amber'">{{ $order->payment_status->label() }}</flux:badge></flux:table.cell>
                         <flux:table.cell>₹{{ number_format((float) $order->total_amount, 2) }}</flux:table.cell>
                         <flux:table.cell>
-                            <flux:button size="sm" variant="ghost" :href="route('orders.show', $order)" wire:navigate>
-                                {{ __('View') }}
-                            </flux:button>
+                            <div class="flex items-center justify-end gap-1">
+                                @if ($order->isPaid() && $order->invoice_number)
+                                    <flux:button size="sm" variant="ghost" icon="arrow-down-tray" :href="route('orders.invoice', $order)">
+                                        {{ __('Invoice') }}
+                                    </flux:button>
+                                @endif
+                                <flux:button size="sm" variant="ghost" :href="route('orders.show', $order)" wire:navigate>
+                                    {{ $order->isPaid() ? __('View') : __('Pay now') }}
+                                </flux:button>
+                            </div>
                         </flux:table.cell>
                     </flux:table.row>
                 @empty

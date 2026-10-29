@@ -28,7 +28,7 @@ new #[Title('Add Sales Manager')] class extends Component
             'password' => $this->passwordRules(),
         ]);
 
-        User::create([
+        $manager = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
@@ -36,9 +36,9 @@ new #[Title('Add Sales Manager')] class extends Component
             'status' => UserStatus::Approved,
         ]);
 
-        Flux::toast(variant: 'success', text: __('Sales manager created.'));
+        Flux::toast(variant: 'success', text: __('Sales manager created. Now assign their franchises.'));
 
-        $this->redirectRoute('admin.sales-managers.index', navigate: true);
+        $this->redirectRoute('admin.sales-managers.franchises', $manager, navigate: true);
     }
 }; ?>
 

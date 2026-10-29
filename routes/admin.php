@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified', 'approved', 'role:admin'])
         Route::livewire('sales-managers', 'pages::admin.sales-managers.index')->name('sales-managers.index');
         Route::livewire('sales-managers/create', 'pages::admin.sales-managers.create')->name('sales-managers.create');
         Route::livewire('sales-managers/{salesManager}/edit', 'pages::admin.sales-managers.edit')->name('sales-managers.edit');
+        Route::livewire('sales-managers/{salesManager}/franchises', 'pages::admin.sales-managers.franchises')->name('sales-managers.franchises');
 
         Route::livewire('orders', 'pages::admin.orders.index')->name('orders.index');
         Route::livewire('orders/{order}', 'pages::admin.orders.show')->name('orders.show');

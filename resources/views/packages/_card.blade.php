@@ -6,6 +6,12 @@
             <img src="{{ Storage::url($package->image_path) }}" alt="{{ $package->name }}" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
         @endif
 
+        @if ($package->hasDiscount() && auth()->check() && auth()->user()->isApproved())
+            <flux:badge size="sm" color="green" variant="solid" class="absolute top-2 right-2">
+                {{ __(':percent% off', ['percent' => $package->discountPercentage()]) }}
+            </flux:badge>
+        @endif
+
         @if (isset($package->products_count))
             <flux:badge size="sm" class="absolute top-2 left-2 border border-brand-200 bg-white/90! text-brand-700! dark:border-brand-700 dark:bg-brand-900/90! dark:text-brand-200!">
                 {{ trans_choice(':count product|:count products', $package->products_count, ['count' => $package->products_count]) }}
@@ -23,7 +29,12 @@
         <div class="mt-auto pt-2">
             @auth
                 @if (auth()->user()->isApproved())
-                    <flux:text class="text-lg font-semibold text-brand-700 dark:text-brand-300">₹{{ number_format((float) $package->price, 2) }}</flux:text>
+                    <div class="flex flex-wrap items-baseline gap-x-2">
+                        <flux:text class="text-lg font-semibold text-brand-700 dark:text-brand-300">₹{{ number_format((float) $package->price, 2) }}</flux:text>
+                        @if ($package->hasDiscount())
+                            <flux:text size="sm" class="text-brand-400 line-through">₹{{ number_format((float) $package->subtotal, 2) }}</flux:text>
+                        @endif
+                    </div>
                 @else
                     <flux:text size="sm" class="text-brand-500 dark:text-brand-400">{{ __('Pending approval') }}</flux:text>
                 @endif

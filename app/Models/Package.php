@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use Database\Factories\PackageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,10 +17,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $slug
  * @property string|null $description
  * @property string|null $image_path
+ * @property float $subtotal
+ * @property DiscountType|null $discount_type
+ * @property float $discount_value
  * @property float $price
  * @property bool $is_active
  */
-#[Fillable(['name', 'slug', 'description', 'image_path', 'price', 'is_active'])]
+#[Fillable(['name', 'slug', 'description', 'image_path', 'subtotal', 'discount_type', 'discount_value', 'price', 'is_active'])]
 class Package extends Model
 {
     /** @use HasFactory<PackageFactory> */
@@ -27,27 +31,85 @@ class Package extends Model
 
     protected $attributes = [
         'is_active' => true,
+        'subtotal' => 0,
+        'discount_value' => 0,
+        'price' => 0,
     ];
 
     protected function casts(): array
     {
         return [
+            'subtotal' => 'decimal:2',
+            'discount_type' => DiscountType::class,
+            'discount_value' => 'decimal:2',
             'price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
 
     /**
-     * @return BelongsToMany<Product, $this>
+     * Work out the subtotal, discount and final price for a set of products.
+     *
+     * @return array{subtotal: float, discount: float, price: float}
      */
+    public static function priceBreakdown(float $subtotal, ?DiscountType $type, float $discountValue): array
+    {
+        $subtotal = round(max($subtotal, 0), 2);
+
+        $discount = match ($type) {
+            DiscountType::Percent => $subtotal * min(max($discountValue, 0), 100) / 100,
+            DiscountType::Fixed => max($discountValue, 0),
+            default => 0.0,
+        };
+
+        $discount = round(min($discount, $subtotal), 2);
+
+        return [
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'price' => round($subtotal - $discount, 2),
+        ];
+    }
+
+    /**
+     * Recalculate and store the package subtotal and final price from its products.
+     */
+    public function refreshPrice(): void
+    {
+        $subtotal = $this->products()->get()->sum(
+            fn (Product $product) => (float) ($product->price ?? 0) * $product->pivot->quantity,
+        );
+
+        $breakdown = self::priceBreakdown($subtotal, $this->discount_type, (float) $this->discount_value);
+
+        $this->forceFill([
+            'subtotal' => $breakdown['subtotal'],
+            'price' => $breakdown['price'],
+        ])->save();
+    }
+
+    public function discountAmount(): float
+    {
+        return round(max((float) $this->subtotal - (float) $this->price, 0), 2);
+    }
+
+    public function hasDiscount(): bool
+    {
+        return $this->discountAmount() > 0;
+    }
+
+    public function discountPercentage(): int
+    {
+        return (float) $this->subtotal > 0
+            ? (int) round($this->discountAmount() / (float) $this->subtotal * 100)
+            : 0;
+    }
+
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class)->withPivot('quantity')->withTimestamps();
     }
 
-    /**
-     * @return HasMany<Order, $this>
-     */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);

@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\ApproveFranchiseHolder;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\User;
@@ -25,7 +26,13 @@ new #[Title('Franchise Holders')] class extends Component
     public function updateStatus(int $userId, string $status): void
     {
         $user = User::query()->where('role', UserRole::FranchiseHolder)->findOrFail($userId);
-        $user->update(['status' => UserStatus::from($status)]);
+        $newStatus = UserStatus::from($status);
+
+        if ($newStatus === UserStatus::Approved) {
+            app(ApproveFranchiseHolder::class)($user);
+        } else {
+            $user->update(['status' => $newStatus]);
+        }
 
         Flux::toast(variant: 'success', text: __(':name is now :status.', ['name' => $user->name, 'status' => $user->status->label()]));
     }

@@ -18,13 +18,17 @@ class PackageFactory extends Factory
     public function definition(): array
     {
         $name = fake()->unique()->words(3, true).' kit';
+        $price = fake()->randomFloat(2, 500, 5000);
 
         return [
             'name' => ucwords($name),
             'slug' => str($name)->slug(),
             'description' => fake()->paragraph(),
             'image_path' => null,
-            'price' => fake()->randomFloat(2, 500, 5000),
+            'subtotal' => $price,
+            'discount_type' => null,
+            'discount_value' => 0,
+            'price' => $price,
             'is_active' => true,
         ];
     }

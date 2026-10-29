@@ -30,6 +30,21 @@ new #[Title('Products')] class extends Component
         $product->update(['is_active' => ! $product->is_active]);
     }
 
+    public function updatePrice(Product $product, string $price): void
+    {
+        $price = trim($price);
+
+        if ($price !== '' && (! is_numeric($price) || (float) $price < 0 || (float) $price > 99999999)) {
+            Flux::toast(variant: 'danger', text: __('Enter a valid price.'));
+
+            return;
+        }
+
+        $product->update(['price' => $price === '' ? null : round((float) $price, 2)]);
+
+        Flux::toast(variant: 'success', text: __('Price updated for :name.', ['name' => $product->name]));
+    }
+
     public function with(): array
     {
         return [
@@ -71,7 +86,17 @@ new #[Title('Products')] class extends Component
                     </flux:table.cell>
                     <flux:table.cell>{{ $product->name }}</flux:table.cell>
                     <flux:table.cell>{{ $product->category }}</flux:table.cell>
-                    <flux:table.cell>{{ $product->price !== null ? '₹'.number_format((float) $product->price, 2) : '—' }}</flux:table.cell>
+                    <flux:table.cell>
+                        <flux:input
+                            type="number" step="0.01" min="0" size="sm" class="w-32"
+                            placeholder="{{ __('Set price') }}"
+                            value="{{ $product->price }}"
+                            x-on:change="$wire.updatePrice({{ $product->id }}, $event.target.value)"
+                            aria-label="{{ __('Price for :name', ['name' => $product->name]) }}"
+                        >
+                            <x-slot name="iconLeading"><span class="text-sm text-zinc-500">₹</span></x-slot>
+                        </flux:input>
+                    </flux:table.cell>
                     <flux:table.cell>
                         <flux:badge :variant="$product->is_active ? 'solid' : 'outline'" wire:click="toggleActive({{ $product->id }})" class="cursor-pointer">
                             {{ $product->is_active ? __('Active') : __('Inactive') }}

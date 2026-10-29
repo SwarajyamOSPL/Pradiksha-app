@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'approved'])->group(function () {
@@ -14,4 +15,5 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
 
     Route::livewire('orders', 'pages::shop.orders.index')->name('orders.index');
     Route::livewire('orders/{order}', 'pages::shop.orders.show')->name('orders.show');
+    Route::get('orders/{order}/invoice', InvoiceController::class)->name('orders.invoice');
 });

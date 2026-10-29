@@ -4,7 +4,7 @@
             :title="auth()->user()->status->label()"
             :description="auth()->user()->status->value === 'suspended'
                 ? __('Your account has been suspended. Please contact Pradiksha Herbal support for assistance.')
-                : __('Thanks for registering! An admin is reviewing your account and will approve it shortly. You will be able to see pricing and place orders once approved.')"
+                : __('Thanks for registering! Your request has been sent to our admin for approval. You will be able to log in, see pricing and place orders once it is approved.')"
         />
 
         <form method="POST" action="{{ route('logout') }}">

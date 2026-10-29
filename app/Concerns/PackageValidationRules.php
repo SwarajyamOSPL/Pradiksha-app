@@ -2,6 +2,7 @@
 
 namespace App\Concerns;
 
+use App\Enums\DiscountType;
 use App\Models\Package;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
@@ -24,7 +25,11 @@ trait PackageValidationRules
                     : Rule::unique(Package::class)->ignore($packageId),
             ],
             'description' => ['nullable', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'discount_type' => ['nullable', Rule::enum(DiscountType::class)],
+            'discount_value' => [
+                'nullable', 'numeric', 'min:0',
+                Rule::when($this->discount_type === DiscountType::Percent->value, ['max:100']),
+            ],
             'is_active' => ['boolean'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'products' => ['array'],

@@ -19,13 +19,13 @@ new #[Title('Franchise Holder')] class extends Component
     public function with(): array
     {
         return [
-            'orders' => $this->holder->orders()->latest()->paginate(10),
+            'orders' => $this->holder->orders()->paid()->latest('paid_at')->paginate(10),
         ];
     }
 }; ?>
 
 <section class="w-full max-w-3xl">
-    <flux:button variant="ghost" :href="route('sales.dashboard')" wire:navigate icon="arrow-left">
+    <flux:button variant="ghost" :href="route('sales.franchise-holders.index')" wire:navigate icon="arrow-left">
         {{ __('Back') }}
     </flux:button>
 
@@ -52,19 +52,23 @@ new #[Title('Franchise Holder')] class extends Component
             <flux:table.column>{{ __('Date') }}</flux:table.column>
             <flux:table.column>{{ __('Status') }}</flux:table.column>
             <flux:table.column>{{ __('Total') }}</flux:table.column>
+            <flux:table.column></flux:table.column>
         </flux:table.columns>
 
         <flux:table.rows>
             @forelse ($orders as $order)
                 <flux:table.row wire:key="sales-order-{{ $order->id }}">
                     <flux:table.cell>#{{ $order->id }}</flux:table.cell>
-                    <flux:table.cell>{{ $order->created_at->format('d M Y') }}</flux:table.cell>
-                    <flux:table.cell><flux:badge>{{ $order->status->label() }}</flux:badge></flux:table.cell>
+                    <flux:table.cell>{{ ($order->paid_at ?? $order->created_at)->format('d M Y') }}</flux:table.cell>
+                    <flux:table.cell><flux:badge size="sm" :color="$order->status->color()">{{ $order->status->label() }}</flux:badge></flux:table.cell>
                     <flux:table.cell>₹{{ number_format((float) $order->total_amount, 2) }}</flux:table.cell>
+                    <flux:table.cell>
+                        <flux:button size="sm" variant="ghost" :href="route('sales.orders.show', $order)" wire:navigate>{{ __('View') }}</flux:button>
+                    </flux:table.cell>
                 </flux:table.row>
             @empty
                 <flux:table.row>
-                    <flux:table.cell colspan="4">{{ __('No orders yet.') }}</flux:table.cell>
+                    <flux:table.cell colspan="5">{{ __('No orders yet.') }}</flux:table.cell>
                 </flux:table.row>
             @endforelse
         </flux:table.rows>

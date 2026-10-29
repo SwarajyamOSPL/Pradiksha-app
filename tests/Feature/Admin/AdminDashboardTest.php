@@ -5,6 +5,8 @@ use App\Models\Order;
 use App\Models\Package;
 use App\Models\Product;
 use App\Models\User;
+use App\Notifications\NewOrderPlaced;
+use Livewire\Livewire;
 
 test('non-admins cannot access the admin dashboard', function () {
     $user = User::factory()->create();
@@ -37,30 +39,54 @@ test('admin dashboard renders for an empty system', function () {
         ->assertSee('All caught up');
 });
 
-test('admin dashboard totals exclude cancelled orders from order value', function () {
+test('admin dashboard totals count only paid orders and exclude cancelled ones from order value', function () {
     $admin = User::factory()->admin()->create();
-    Order::factory()->create(['status' => OrderStatus::Delivered, 'total_amount' => 1000]);
-    Order::factory()->create(['status' => OrderStatus::Pending, 'total_amount' => 500]);
-    Order::factory()->create(['status' => OrderStatus::Cancelled, 'total_amount' => 9999]);
+    Order::factory()->paid()->create(['status' => OrderStatus::Delivered, 'total_amount' => 1000]);
+    Order::factory()->paid()->create(['status' => OrderStatus::Confirmed, 'total_amount' => 500]);
+    Order::factory()->paid()->create(['status' => OrderStatus::Cancelled, 'total_amount' => 9999]);
+    Order::factory()->create(['status' => OrderStatus::Pending, 'total_amount' => 777]);
 
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
         ->assertOk()
         ->assertSee('₹1,500.00')
         ->assertDontSee('₹11,499.00')
+        ->assertDontSee('777.00')
         ->assertSee('1 awaiting action');
 });
 
-test('admin dashboard lists recent orders and links to them', function () {
+test('admin dashboard lists recent paid orders and links to them', function () {
     $admin = User::factory()->admin()->create();
-    $order = Order::factory()->create(['status' => OrderStatus::Shipped]);
+    $order = Order::factory()->paid()->create(['status' => OrderStatus::Shipped]);
+    $unpaid = Order::factory()->create();
 
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
         ->assertOk()
         ->assertSee('#'.$order->id)
         ->assertSee('Shipped')
+        ->assertSee(route('admin.orders.show', $order))
+        ->assertDontSee(route('admin.orders.show', $unpaid));
+});
+
+test('admin dashboard shows new paid orders from notifications and lets the admin clear them', function () {
+    $admin = User::factory()->admin()->create();
+    $order = Order::factory()->paid()->create();
+    $admin->notify(new NewOrderPlaced($order));
+
+    $this->actingAs($admin)
+        ->get(route('admin.dashboard'))
+        ->assertOk()
+        ->assertSee('1 new paid order')
         ->assertSee(route('admin.orders.show', $order));
+
+    Livewire::actingAs($admin)
+        ->test('pages::admin.dashboard')
+        ->assertSee('1 new paid order')
+        ->call('markNewOrdersRead')
+        ->assertDontSee('1 new paid order');
+
+    expect($admin->unreadNotifications()->count())->toBe(0);
 });
 
 test('admin dashboard surfaces franchise holders awaiting approval', function () {

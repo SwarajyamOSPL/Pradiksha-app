@@ -58,6 +58,9 @@ new #[Title('Sales Managers')] class extends Component
                     <flux:table.cell><flux:badge>{{ $manager->status->label() }}</flux:badge></flux:table.cell>
                     <flux:table.cell>
                         <div class="flex gap-2">
+                            <flux:button size="sm" variant="primary" icon="users" :href="route('admin.sales-managers.franchises', $manager)" wire:navigate>
+                                {{ __('Assign franchises') }}
+                            </flux:button>
                             <flux:button size="sm" variant="ghost" :href="route('admin.sales-managers.edit', $manager)" wire:navigate>
                                 {{ __('Edit') }}
                             </flux:button>

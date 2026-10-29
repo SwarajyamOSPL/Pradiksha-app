@@ -51,7 +51,12 @@ new #[Title('Edit Sales Manager')] class extends Component
 }; ?>
 
 <section class="w-full max-w-lg">
-    <flux:heading size="xl">{{ __('Edit Sales Manager') }}</flux:heading>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <flux:heading size="xl">{{ __('Edit Sales Manager') }}</flux:heading>
+        <flux:button size="sm" icon="users" :href="route('admin.sales-managers.franchises', $salesManager)" wire:navigate>
+            {{ __('Assign franchises') }}
+        </flux:button>
+    </div>
 
     <form wire:submit="save" class="mt-6 flex flex-col gap-6">
         <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus />

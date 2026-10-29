@@ -13,12 +13,16 @@ new #[Title('Orders')] class extends Component
     #[Url]
     public string $status = '';
 
+    #[Url]
+    public string $payment = '';
+
     public function with(): array
     {
         return [
             'orders' => Order::query()
                 ->with('user')
                 ->when($this->status, fn ($query) => $query->where('status', $this->status))
+                ->when($this->payment, fn ($query) => $query->where('payment_status', $this->payment))
                 ->latest()
                 ->paginate(15),
         ];
@@ -28,12 +32,21 @@ new #[Title('Orders')] class extends Component
 <section class="w-full">
     <flux:heading size="xl">{{ __('Orders') }}</flux:heading>
 
-    <flux:select wire:model.live="status" class="mt-6 max-w-xs">
-        <flux:select.option value="">{{ __('All statuses') }}</flux:select.option>
-        @foreach (\App\Enums\OrderStatus::cases() as $case)
-            <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
-        @endforeach
-    </flux:select>
+    <div class="mt-6 flex flex-wrap gap-4">
+        <flux:select wire:model.live="status" class="max-w-xs">
+            <flux:select.option value="">{{ __('All statuses') }}</flux:select.option>
+            @foreach (\App\Enums\OrderStatus::cases() as $case)
+                <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
+            @endforeach
+        </flux:select>
+
+        <flux:select wire:model.live="payment" class="max-w-xs">
+            <flux:select.option value="">{{ __('All payments') }}</flux:select.option>
+            @foreach (\App\Enums\PaymentStatus::cases() as $case)
+                <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
+            @endforeach
+        </flux:select>
+    </div>
 
     <flux:table class="mt-6">
         <flux:table.columns>
@@ -52,8 +65,8 @@ new #[Title('Orders')] class extends Component
                     <flux:table.cell>#{{ $order->id }}</flux:table.cell>
                     <flux:table.cell>{{ $order->user->name }}</flux:table.cell>
                     <flux:table.cell>{{ $order->created_at->format('d M Y') }}</flux:table.cell>
-                    <flux:table.cell><flux:badge>{{ $order->status->label() }}</flux:badge></flux:table.cell>
-                    <flux:table.cell><flux:badge>{{ $order->payment_status->label() }}</flux:badge></flux:table.cell>
+                    <flux:table.cell><flux:badge size="sm" :color="$order->status->color()">{{ $order->status->label() }}</flux:badge></flux:table.cell>
+                    <flux:table.cell><flux:badge size="sm" :color="$order->isPaid() ? 'green' : 'amber'">{{ $order->payment_status->label() }}</flux:badge></flux:table.cell>
                     <flux:table.cell>₹{{ number_format((float) $order->total_amount, 2) }}</flux:table.cell>
                     <flux:table.cell>
                         <flux:button size="sm" variant="ghost" :href="route('admin.orders.show', $order)" wire:navigate>

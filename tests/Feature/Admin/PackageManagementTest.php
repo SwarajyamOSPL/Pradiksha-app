@@ -18,14 +18,13 @@ test('non-admins cannot access the admin packages page', function () {
 
 test('admin can create a package with products', function () {
     $admin = User::factory()->admin()->create();
-    $productA = Product::factory()->create();
-    $productB = Product::factory()->create();
+    $productA = Product::factory()->create(['price' => 100]);
+    $productB = Product::factory()->create(['price' => 50]);
 
     Livewire::actingAs($admin)
         ->test('pages::admin.packages.create')
         ->set('name', 'Starter Wellness Kit')
         ->set('description', 'A curated starter kit.')
-        ->set('price', '1999.00')
         ->set('products', [
             ['product_id' => (string) $productA->id, 'quantity' => 2],
             ['product_id' => (string) $productB->id, 'quantity' => 1],
@@ -38,6 +37,10 @@ test('admin can create a package with products', function () {
     expect($package->slug)->toBe('starter-wellness-kit');
     expect($package->products)->toHaveCount(2);
     expect($package->products->firstWhere('id', $productA->id)->pivot->quantity)->toBe(2);
+
+    // 2 x 100 + 1 x 50, no discount.
+    expect((float) $package->subtotal)->toBe(250.0)
+        ->and((float) $package->price)->toBe(250.0);
 });
 
 test('admin can update a package and its products', function () {

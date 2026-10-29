@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\StoreUploadedImageAsWebp;
+use App\Concerns\CalculatesPackagePricing;
 use App\Concerns\PackageValidationRules;
 use App\Models\Package;
 use App\Models\Product;
@@ -13,15 +14,13 @@ use Livewire\WithFileUploads;
 
 new #[Title('Create Package')] class extends Component
 {
-    use PackageValidationRules, WithFileUploads;
+    use CalculatesPackagePricing, PackageValidationRules, WithFileUploads;
 
     public string $name = '';
 
     public string $slug = '';
 
     public ?string $description = null;
-
-    public ?string $price = null;
 
     public bool $is_active = true;
 
@@ -76,7 +75,8 @@ new #[Title('Create Package')] class extends Component
         $validated = $this->validate($this->packageRules());
 
         $package = Package::create([
-            ...collect($validated)->except(['image', 'products'])->toArray(),
+            ...collect($validated)->except(['image', 'products', 'discount_type', 'discount_value'])->toArray(),
+            ...$this->discountAttributes(),
         ]);
 
         if ($this->image) {
@@ -90,6 +90,8 @@ new #[Title('Create Package')] class extends Component
                 fn (array $row) => [$row['product_id'] => ['quantity' => $row['quantity']]],
             ),
         );
+
+        $package->refreshPrice();
 
         Flux::toast(variant: 'success', text: __('Package created.'));
 

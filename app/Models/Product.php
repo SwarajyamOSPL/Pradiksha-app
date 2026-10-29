@@ -31,6 +31,15 @@ class Product extends Model
         'is_active' => true,
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Product $product): void {
+            if ($product->wasChanged('price')) {
+                $product->packages()->get()->each->refreshPrice();
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

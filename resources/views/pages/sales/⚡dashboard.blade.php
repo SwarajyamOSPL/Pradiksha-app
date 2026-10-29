@@ -1,71 +1,147 @@
 <?php
 
+use App\Enums\OrderStatus;
+use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Title('My Franchise Holders')] class extends Component
+new #[Title('Sales Dashboard')] class extends Component
 {
     use WithPagination;
 
     #[Url]
-    public string $search = '';
+    public string $franchise = '';
+
+    #[Url]
+    public string $status = '';
+
+    public function updatedFranchise(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatus(): void
+    {
+        $this->resetPage();
+    }
 
     public function with(): array
     {
+        $manager = Auth::user();
+        $franchises = $manager->franchiseHolders()->orderBy('business_name')->orderBy('name')->get();
+
+        $allOrders = fn () => Order::query()->paid()->whereIn('user_id', $franchises->pluck('id'));
+
         return [
-            'franchiseHolders' => Auth::user()->franchiseHolders()
-                ->when($this->search, fn ($query) => $query->where(fn ($q) => $q
-                    ->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('business_name', 'like', "%{$this->search}%")))
-                ->withCount('orders')
-                ->orderBy('name')
+            'franchises' => $franchises,
+            'orderCount' => $allOrders()->count(),
+            'orderValue' => (float) $allOrders()->where('status', '!=', OrderStatus::Cancelled)->sum('total_amount'),
+            'monthOrderCount' => $allOrders()->where('paid_at', '>=', now()->startOfMonth())->count(),
+            'orders' => $allOrders()
+                ->with('user')
+                ->withCount('items')
+                ->when($this->franchise, fn ($query) => $query->where('user_id', $this->franchise))
+                ->when($this->status, fn ($query) => $query->where('status', $this->status))
+                ->latest('paid_at')
                 ->paginate(15),
         ];
     }
 }; ?>
 
-<section class="w-full">
-    <flux:heading size="xl">{{ __('My Franchise Holders') }}</flux:heading>
+<section class="w-full space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <flux:heading size="xl" level="1">{{ __('Welcome back, :name', ['name' => str(auth()->user()->name)->before(' ')]) }}</flux:heading>
+            <flux:text class="mt-1">{{ __('Orders placed by the franchises assigned to you.') }}</flux:text>
+        </div>
 
-    <flux:input wire:model.live.debounce.300ms="search" :placeholder="__('Search name or business...')" icon="magnifying-glass" class="mt-6 max-w-sm" />
+        <flux:button icon="users" :href="route('sales.franchise-holders.index')" wire:navigate>{{ __('My franchises') }}</flux:button>
+    </div>
 
-    <flux:table class="mt-6">
-        <flux:table.columns>
-            <flux:table.column>{{ __('Name') }}</flux:table.column>
-            <flux:table.column>{{ __('Business') }}</flux:table.column>
-            <flux:table.column>{{ __('Status') }}</flux:table.column>
-            <flux:table.column>{{ __('Orders') }}</flux:table.column>
-            <flux:table.column></flux:table.column>
-        </flux:table.columns>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <flux:card>
+            <flux:text size="sm">{{ __('Assigned franchises') }}</flux:text>
+            <p class="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">{{ $franchises->count() }}</p>
+        </flux:card>
+        <flux:card>
+            <flux:text size="sm">{{ __('Total orders') }}</flux:text>
+            <p class="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">{{ number_format($orderCount) }}</p>
+        </flux:card>
+        <flux:card>
+            <flux:text size="sm">{{ __('Orders this month') }}</flux:text>
+            <p class="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">{{ number_format($monthOrderCount) }}</p>
+        </flux:card>
+        <flux:card>
+            <flux:text size="sm">{{ __('Order value') }}</flux:text>
+            <p class="mt-2 truncate text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">₹{{ number_format($orderValue, 2) }}</p>
+            <flux:text size="sm" class="mt-1">{{ __('Excludes cancelled orders') }}</flux:text>
+        </flux:card>
+    </div>
 
-        <flux:table.rows>
-            @forelse ($franchiseHolders as $holder)
-                <flux:table.row wire:key="sales-holder-{{ $holder->id }}">
-                    <flux:table.cell>
-                        {{ $holder->name }}
-                        <flux:text class="text-zinc-500">{{ $holder->email }}</flux:text>
-                    </flux:table.cell>
-                    <flux:table.cell>{{ $holder->business_name }}</flux:table.cell>
-                    <flux:table.cell><flux:badge>{{ $holder->status->label() }}</flux:badge></flux:table.cell>
-                    <flux:table.cell>{{ $holder->orders_count }}</flux:table.cell>
-                    <flux:table.cell>
-                        <flux:button size="sm" variant="ghost" :href="route('sales.franchise-holders.show', $holder)" wire:navigate>
-                            {{ __('View') }}
-                        </flux:button>
-                    </flux:table.cell>
-                </flux:table.row>
-            @empty
-                <flux:table.row>
-                    <flux:table.cell colspan="5">{{ __("You don't have any franchise holders assigned yet.") }}</flux:table.cell>
-                </flux:table.row>
-            @endforelse
-        </flux:table.rows>
-    </flux:table>
+    <div>
+        <flux:heading size="lg">{{ __('Order history') }}</flux:heading>
 
-    <div class="mt-6">
-        {{ $franchiseHolders->links() }}
+        <div class="mt-4 flex flex-wrap gap-4">
+            <flux:select wire:model.live="franchise" class="max-w-xs">
+                <flux:select.option value="">{{ __('All franchises') }}</flux:select.option>
+                @foreach ($franchises as $holder)
+                    <flux:select.option value="{{ $holder->id }}">{{ $holder->business_name ?: $holder->name }}{{ $holder->city ? ' ('.$holder->city.')' : '' }}</flux:select.option>
+                @endforeach
+            </flux:select>
+
+            <flux:select wire:model.live="status" class="max-w-xs">
+                <flux:select.option value="">{{ __('All statuses') }}</flux:select.option>
+                @foreach (OrderStatus::cases() as $case)
+                    <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
+                @endforeach
+            </flux:select>
+        </div>
+
+        <flux:table class="mt-4">
+            <flux:table.columns>
+                <flux:table.column>{{ __('Order') }}</flux:table.column>
+                <flux:table.column>{{ __('Franchise') }}</flux:table.column>
+                <flux:table.column>{{ __('Items') }}</flux:table.column>
+                <flux:table.column>{{ __('Status') }}</flux:table.column>
+                <flux:table.column align="end">{{ __('Total') }}</flux:table.column>
+                <flux:table.column></flux:table.column>
+            </flux:table.columns>
+
+            <flux:table.rows>
+                @forelse ($orders as $order)
+                    <flux:table.row wire:key="sales-order-{{ $order->id }}">
+                        <flux:table.cell variant="strong">
+                            #{{ $order->id }}
+                            <span class="block text-xs font-normal text-zinc-500 dark:text-zinc-400">{{ ($order->paid_at ?? $order->created_at)->format('d M Y, h:i A') }}</span>
+                        </flux:table.cell>
+                        <flux:table.cell>
+                            {{ $order->user->business_name ?: $order->user->name }}
+                            <span class="block text-xs text-zinc-500 dark:text-zinc-400">{{ $order->user->city }}</span>
+                        </flux:table.cell>
+                        <flux:table.cell>{{ $order->items_count }}</flux:table.cell>
+                        <flux:table.cell>
+                            <flux:badge size="sm" :color="$order->status->color()" inset="top bottom">{{ $order->status->label() }}</flux:badge>
+                        </flux:table.cell>
+                        <flux:table.cell align="end" variant="strong">₹{{ number_format((float) $order->total_amount, 2) }}</flux:table.cell>
+                        <flux:table.cell align="end">
+                            <flux:button size="sm" variant="ghost" icon="eye" :href="route('sales.orders.show', $order)" wire:navigate inset="top bottom" aria-label="{{ __('View order') }}" />
+                        </flux:table.cell>
+                    </flux:table.row>
+                @empty
+                    <flux:table.row>
+                        <flux:table.cell colspan="6">
+                            {{ $franchises->isEmpty() ? __("You don't have any franchises assigned yet.") : __('No orders found.') }}
+                        </flux:table.cell>
+                    </flux:table.row>
+                @endforelse
+            </flux:table.rows>
+        </flux:table>
+
+        <div class="mt-4">
+            {{ $orders->links() }}
+        </div>
     </div>
 </section>

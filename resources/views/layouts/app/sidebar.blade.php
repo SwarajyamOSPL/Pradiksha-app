@@ -28,13 +28,13 @@
                         <flux:sidebar.item icon="archive-box" :href="route('admin.packages.index')" :current="request()->routeIs('admin.packages.*')" wire:navigate>
                             {{ __('Packages') }}
                         </flux:sidebar.item>
-                        <flux:sidebar.item icon="users" :href="route('admin.franchise-holders.index')" :current="request()->routeIs('admin.franchise-holders.*')" wire:navigate>
+                        <flux:sidebar.item icon="users" :href="route('admin.franchise-holders.index')" :current="request()->routeIs('admin.franchise-holders.*')" :badge="\App\Models\User::where('role', \App\Enums\UserRole::FranchiseHolder)->where('status', \App\Enums\UserStatus::Pending)->count() ?: null" badge:color="amber" wire:navigate>
                             {{ __('Franchise Holders') }}
                         </flux:sidebar.item>
                         <flux:sidebar.item icon="identification" :href="route('admin.sales-managers.index')" :current="request()->routeIs('admin.sales-managers.*')" wire:navigate>
                             {{ __('Sales Managers') }}
                         </flux:sidebar.item>
-                        <flux:sidebar.item icon="receipt-percent" :href="route('admin.orders.index')" :current="request()->routeIs('admin.orders.*')" wire:navigate>
+                        <flux:sidebar.item icon="receipt-percent" :href="route('admin.orders.index')" :current="request()->routeIs('admin.orders.*')" :badge="auth()->user()->unreadNotifications()->count() ?: null" badge:color="green" wire:navigate>
                             {{ __('Orders') }}
                         </flux:sidebar.item>
                     </flux:sidebar.group>
@@ -59,8 +59,11 @@
 
                 @if (auth()->user()->isSalesManager())
                     <flux:sidebar.group :heading="__('Sales')" class="grid">
-                        <flux:sidebar.item icon="users" :href="route('sales.dashboard')" :current="request()->routeIs('sales.*')" wire:navigate>
-                            {{ __('My Franchise Holders') }}
+                        <flux:sidebar.item icon="chart-bar" :href="route('sales.dashboard')" :current="request()->routeIs('sales.dashboard') || request()->routeIs('sales.orders.*')" wire:navigate>
+                            {{ __('Dashboard') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="users" :href="route('sales.franchise-holders.index')" :current="request()->routeIs('sales.franchise-holders.*')" wire:navigate>
+                            {{ __('My Franchises') }}
                         </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif

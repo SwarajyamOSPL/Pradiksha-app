@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\ApproveFranchiseHolder;
 use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
@@ -7,6 +8,8 @@ use App\Models\Order;
 use App\Models\Package;
 use App\Models\Product;
 use App\Models\User;
+use App\Notifications\NewOrderPlaced;
+use Flux\Flux;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -15,26 +18,44 @@ new #[Title('Admin Dashboard')] class extends Component
     /**
      * @return array<string, mixed>
      */
+    public function approveHolder(int $userId, ApproveFranchiseHolder $approveFranchiseHolder): void
+    {
+        $holder = User::query()->where('role', UserRole::FranchiseHolder)->findOrFail($userId);
+
+        $approveFranchiseHolder($holder);
+
+        Flux::toast(variant: 'success', text: __(':name is approved and can now log in.', ['name' => $holder->business_name ?: $holder->name]));
+    }
+
+    public function markNewOrdersRead(): void
+    {
+        auth()->user()->unreadNotifications()->where('type', NewOrderPlaced::class)->update(['read_at' => now()]);
+    }
+
     public function with(): array
     {
         $holders = User::where('role', UserRole::FranchiseHolder);
         $orderCountsByStatus = Order::query()
+            ->paid()
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
+        $newOrders = auth()->user()->unreadNotifications()->where('type', NewOrderPlaced::class);
 
         return [
-            'orderValue' => (float) Order::where('status', '!=', OrderStatus::Cancelled)->sum('total_amount'),
+            'newOrderCount' => (clone $newOrders)->count(),
+            'newOrders' => (clone $newOrders)->latest()->limit(5)->get(),
+            'orderValue' => (float) Order::paid()->where('status', '!=', OrderStatus::Cancelled)->sum('total_amount'),
             'orderCount' => $orderCountsByStatus->sum(),
             'orderCountsByStatus' => $orderCountsByStatus,
-            'pendingOrderCount' => (int) ($orderCountsByStatus[OrderStatus::Pending->value] ?? 0),
+            'awaitingActionCount' => (int) ($orderCountsByStatus[OrderStatus::Confirmed->value] ?? 0),
             'franchiseHolderCount' => (clone $holders)->count(),
             'approvedHolderCount' => (clone $holders)->where('status', UserStatus::Approved)->count(),
             'pendingApprovalCount' => (clone $holders)->where('status', UserStatus::Pending)->count(),
             'awaitingApproval' => (clone $holders)->where('status', UserStatus::Pending)->latest()->limit(5)->get(),
             'activeProductCount' => Product::where('is_active', true)->count(),
             'packageCount' => Package::count(),
-            'recentOrders' => Order::with('user')->latest()->limit(6)->get(),
+            'recentOrders' => Order::paid()->with('user')->latest('paid_at')->limit(6)->get(),
         ];
     }
 }; ?>
@@ -52,6 +73,31 @@ new #[Title('Admin Dashboard')] class extends Component
             <flux:button icon="plus" :href="route('admin.sales-managers.create')" wire:navigate>{{ __('Add sales manager') }}</flux:button>
         </div>
     </div>
+
+    @if ($newOrderCount > 0)
+        <flux:callout icon="bell-alert" color="green">
+            <flux:callout.heading>
+                {{ trans_choice(':count new paid order|:count new paid orders', $newOrderCount) }}
+            </flux:callout.heading>
+
+            <div class="mt-3 flex flex-col gap-1">
+                @foreach ($newOrders as $notification)
+                    <a href="{{ route('admin.orders.show', $notification->data['order_id']) }}" wire:navigate wire:key="new-order-{{ $notification->id }}" class="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5">
+                        <span class="min-w-0 truncate">
+                            <strong>#{{ $notification->data['order_id'] }}</strong>
+                            &middot; {{ $notification->data['customer'] }}
+                            &middot; {{ trans_choice(':count item|:count items', $notification->data['items']) }}
+                        </span>
+                        <span class="shrink-0 font-medium">₹{{ number_format($notification->data['total'], 2) }}</span>
+                    </a>
+                @endforeach
+            </div>
+
+            <x-slot name="actions">
+                <flux:button size="sm" wire:click="markNewOrdersRead">{{ __('Mark all as read') }}</flux:button>
+            </x-slot>
+        </flux:callout>
+    @endif
 
     @if ($pendingApprovalCount > 0)
         <flux:callout icon="clock" color="amber" inline>
@@ -86,9 +132,9 @@ new #[Title('Admin Dashboard')] class extends Component
                     <flux:text size="sm">{{ __('Total orders') }}</flux:text>
                     <p class="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">{{ number_format($orderCount) }}</p>
                     <flux:text size="sm" class="mt-1">
-                        @if ($pendingOrderCount > 0)
-                            <a href="{{ route('admin.orders.index', ['status' => 'pending']) }}" wire:navigate class="font-medium text-amber-600 hover:underline dark:text-amber-400">
-                                {{ __(':count awaiting action', ['count' => $pendingOrderCount]) }}
+                        @if ($awaitingActionCount > 0)
+                            <a href="{{ route('admin.orders.index', ['status' => 'confirmed']) }}" wire:navigate class="font-medium text-amber-600 hover:underline dark:text-amber-400">
+                                {{ __(':count awaiting action', ['count' => $awaitingActionCount]) }}
                             </a>
                         @else
                             {{ __('Nothing waiting on you') }}
@@ -209,14 +255,21 @@ new #[Title('Admin Dashboard')] class extends Component
                 </div>
 
                 @forelse ($awaitingApproval as $holder)
-                    <a href="{{ route('admin.franchise-holders.show', $holder) }}" wire:navigate wire:key="holder-{{ $holder->id }}" class="-mx-2 mt-3 flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700/50">
-                        <flux:avatar size="sm" :name="$holder->name" :initials="$holder->initials()" />
-                        <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium text-zinc-900 dark:text-white">{{ $holder->business_name ?: $holder->name }}</p>
-                            <p class="truncate text-xs text-zinc-500 dark:text-zinc-400">{{ collect([$holder->city, $holder->state])->filter()->join(', ') ?: $holder->email }}</p>
-                        </div>
-                        <span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">{{ $holder->created_at->diffForHumans(short: true) }}</span>
-                    </a>
+                    <div wire:key="holder-{{ $holder->id }}" class="-mx-2 mt-3 flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700/50">
+                        <a href="{{ route('admin.franchise-holders.show', $holder) }}" wire:navigate class="flex min-w-0 flex-1 items-center gap-3">
+                            <flux:avatar size="sm" :name="$holder->name" :initials="$holder->initials()" />
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-medium text-zinc-900 dark:text-white">{{ $holder->business_name ?: $holder->name }}</p>
+                                <p class="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                                    {{ collect([$holder->city, $holder->state])->filter()->join(', ') ?: $holder->email }}
+                                    &middot; {{ $holder->created_at->diffForHumans(short: true) }}
+                                </p>
+                            </div>
+                        </a>
+                        <flux:button size="sm" variant="primary" icon="check" wire:click="approveHolder({{ $holder->id }})" wire:loading.attr="disabled" wire:target="approveHolder({{ $holder->id }})">
+                            {{ __('Approve') }}
+                        </flux:button>
+                    </div>
                 @empty
                     <div class="mt-4 flex items-center gap-3 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:bg-brand-500/10 dark:text-brand-200">
                         <flux:icon name="check-circle" class="size-5 shrink-0" />

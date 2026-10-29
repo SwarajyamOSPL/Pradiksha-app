@@ -18,6 +18,16 @@
             />
 
             <flux:input
+                name="business_name"
+                :label="__('Franchise name')"
+                :value="old('business_name')"
+                type="text"
+                required
+                autocomplete="organization"
+                :placeholder="__('Name of your franchise / shop')"
+            />
+
+            <flux:input
                 name="email"
                 :label="__('Email address')"
                 :value="old('email')"
@@ -49,25 +59,14 @@
 
             <flux:separator :text="__('Business details')" />
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <flux:input
-                    name="phone"
-                    :label="__('Phone number')"
-                    :value="old('phone')"
-                    type="tel"
-                    required
-                    autocomplete="tel"
-                />
-
-                <flux:input
-                    name="business_name"
-                    :label="__('Business / shop name')"
-                    :value="old('business_name')"
-                    type="text"
-                    required
-                    autocomplete="organization"
-                />
-            </div>
+            <flux:input
+                name="phone"
+                :label="__('Phone number')"
+                :value="old('phone')"
+                type="tel"
+                required
+                autocomplete="tel"
+            />
 
             <flux:input
                 name="address"

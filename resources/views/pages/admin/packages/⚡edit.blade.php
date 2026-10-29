@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\StoreUploadedImageAsWebp;
+use App\Concerns\CalculatesPackagePricing;
 use App\Concerns\PackageValidationRules;
 use App\Models\Package;
 use App\Models\Product;
@@ -12,7 +13,7 @@ use Livewire\WithFileUploads;
 
 new #[Title('Edit Package')] class extends Component
 {
-    use PackageValidationRules, WithFileUploads;
+    use CalculatesPackagePricing, PackageValidationRules, WithFileUploads;
 
     public Package $package;
 
@@ -21,8 +22,6 @@ new #[Title('Edit Package')] class extends Component
     public string $slug = '';
 
     public ?string $description = null;
-
-    public ?string $price = null;
 
     public bool $is_active = true;
 
@@ -41,7 +40,8 @@ new #[Title('Edit Package')] class extends Component
         $this->name = $package->name;
         $this->slug = $package->slug;
         $this->description = $package->description;
-        $this->price = $package->price;
+        $this->discount_type = $package->discount_type?->value;
+        $this->discount_value = (string) ((float) $package->discount_value);
         $this->is_active = $package->is_active;
         $this->currentImagePath = $package->image_path;
         $this->availableProducts = Product::query()->orderBy('name')->get();
@@ -77,7 +77,8 @@ new #[Title('Edit Package')] class extends Component
         $validated = $this->validate($this->packageRules($this->package->id));
 
         $this->package->update([
-            ...collect($validated)->except(['image', 'products'])->toArray(),
+            ...collect($validated)->except(['image', 'products', 'discount_type', 'discount_value'])->toArray(),
+            ...$this->discountAttributes(),
         ]);
 
         if ($this->image) {
@@ -91,6 +92,8 @@ new #[Title('Edit Package')] class extends Component
                 fn (array $row) => [$row['product_id'] => ['quantity' => $row['quantity']]],
             ),
         );
+
+        $this->package->refreshPrice();
 
         Flux::toast(variant: 'success', text: __('Package updated.'));
 

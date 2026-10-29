@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\MarkOrderAsPaid;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
@@ -22,12 +23,26 @@ new #[Title('Order Details')] class extends Component
         $this->paymentStatus = $order->payment_status->value;
     }
 
-    public function updateOrder(): void
+    public function updateOrder(MarkOrderAsPaid $markOrderAsPaid): void
     {
-        $this->order->update([
-            'status' => OrderStatus::from($this->status),
-            'payment_status' => PaymentStatus::from($this->paymentStatus),
-        ]);
+        $newPaymentStatus = PaymentStatus::from($this->paymentStatus);
+        $statusBefore = $this->order->status->value;
+
+        // Marking an unpaid order as paid by hand (e.g. cash or bank transfer) goes through the
+        // normal flow so it gets an invoice number, a confirmation email and an admin notification.
+        if ($newPaymentStatus === PaymentStatus::Paid && ! $this->order->isPaid()) {
+            $this->order = $markOrderAsPaid($this->order, 'manual', 'manual')->load('items', 'package', 'user');
+        } else {
+            $this->order->update(['payment_status' => $newPaymentStatus]);
+        }
+
+        // Only apply the status dropdown if the admin changed it, so a manual payment keeps its "Confirmed" status.
+        if ($this->status !== $statusBefore) {
+            $this->order->update(['status' => OrderStatus::from($this->status)]);
+        }
+
+        $this->status = $this->order->status->value;
+        $this->paymentStatus = $this->order->payment_status->value;
 
         Flux::toast(variant: 'success', text: __('Order updated.'));
     }
@@ -61,10 +76,50 @@ new #[Title('Order Details')] class extends Component
         @endforeach
     </div>
 
-    <div class="mt-4 flex items-center justify-between">
-        <flux:heading size="lg">{{ __('Total') }}</flux:heading>
-        <flux:heading size="lg">₹{{ number_format((float) $order->total_amount, 2) }}</flux:heading>
+    <div class="mt-4 flex flex-col gap-1 text-sm">
+        @if ((float) $order->discount_amount > 0 || (float) $order->tax_amount > 0)
+            <div class="flex items-center justify-between">
+                <flux:text>{{ __('Subtotal') }}</flux:text>
+                <flux:text>₹{{ number_format((float) $order->subtotal, 2) }}</flux:text>
+            </div>
+        @endif
+        @if ((float) $order->discount_amount > 0)
+            <div class="flex items-center justify-between">
+                <flux:text>{{ __('Discount') }}</flux:text>
+                <flux:text>-₹{{ number_format((float) $order->discount_amount, 2) }}</flux:text>
+            </div>
+        @endif
+        @if ((float) $order->tax_amount > 0)
+            <div class="flex items-center justify-between">
+                <flux:text>{{ config('invoice.tax.label') }} ({{ rtrim(rtrim(number_format((float) $order->tax_rate, 2), '0'), '.') }}%{{ $order->tax_inclusive ? ', '.__('included') : '' }})</flux:text>
+                <flux:text>₹{{ number_format((float) $order->tax_amount, 2) }}</flux:text>
+            </div>
+        @endif
+        <div class="mt-2 flex items-center justify-between">
+            <flux:heading size="lg">{{ __('Total') }}</flux:heading>
+            <flux:heading size="lg">₹{{ number_format((float) $order->total_amount, 2) }}</flux:heading>
+        </div>
     </div>
+
+    <flux:callout class="mt-6" :icon="$order->isPaid() ? 'check-circle' : 'clock'" :color="$order->isPaid() ? 'green' : 'amber'">
+        <flux:callout.heading>
+            {{ $order->isPaid() ? __('Paid on :date', ['date' => $order->paid_at?->format('d M Y, h:i A')]) : __('Awaiting payment') }}
+        </flux:callout.heading>
+        @if ($order->isPaid())
+            <flux:callout.text>
+                {{ __('Invoice') }}: {{ $order->invoice_number }}
+                &middot; {{ $order->payment_method === 'razorpay' ? __('Razorpay') : __('Marked as paid manually') }}
+                @if ($order->razorpay_payment_id)
+                    &middot; {{ __('Payment ID') }}: {{ $order->razorpay_payment_id }}
+                @endif
+            </flux:callout.text>
+            <x-slot name="actions">
+                <flux:button icon="arrow-down-tray" :href="route('orders.invoice', $order)">{{ __('Download invoice') }}</flux:button>
+            </x-slot>
+        @else
+            <flux:callout.text>{{ __('The customer has not completed the payment, so this order is not counted as placed.') }}</flux:callout.text>
+        @endif
+    </flux:callout>
 
     @if ($order->notes)
         <flux:callout class="mt-6">

@@ -72,7 +72,13 @@ new #[Title('Packages')] class extends Component
                     </flux:table.cell>
                     <flux:table.cell>{{ $package->name }}</flux:table.cell>
                     <flux:table.cell>{{ trans_choice(':count product|:count products', $package->products_count, ['count' => $package->products_count]) }}</flux:table.cell>
-                    <flux:table.cell>₹{{ number_format((float) $package->price, 2) }}</flux:table.cell>
+                    <flux:table.cell>
+                        ₹{{ number_format((float) $package->price, 2) }}
+                        @if ($package->hasDiscount())
+                            <span class="ms-1 text-xs text-zinc-400 line-through">₹{{ number_format((float) $package->subtotal, 2) }}</span>
+                            <flux:badge size="sm" color="green" class="ms-1">{{ $package->discountPercentage() }}%</flux:badge>
+                        @endif
+                    </flux:table.cell>
                     <flux:table.cell>
                         <flux:badge :variant="$package->is_active ? 'solid' : 'outline'" wire:click="toggleActive({{ $package->id }})" class="cursor-pointer">
                             {{ $package->is_active ? __('Active') : __('Inactive') }}
