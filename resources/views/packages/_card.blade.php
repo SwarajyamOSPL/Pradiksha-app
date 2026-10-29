@@ -6,6 +6,10 @@
             <img src="{{ Storage::url($package->image_path) }}" alt="{{ $package->name }}" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
         @endif
 
+        @if (auth()->check() && auth()->user()->isApproved() && ! $package->isAvailable())
+            <flux:badge size="sm" color="red" variant="solid" class="absolute bottom-2 left-2">{{ __('Out of stock') }}</flux:badge>
+        @endif
+
         @if ($package->hasDiscount() && auth()->check() && auth()->user()->isApproved())
             <flux:badge size="sm" color="green" variant="solid" class="absolute top-2 right-2">
                 {{ __(':percent% off', ['percent' => $package->discountPercentage()]) }}

@@ -30,3 +30,20 @@ test('franchise holders keep their platform dashboard link and shop menu', funct
         ->assertSee('Platform')
         ->assertSee('My Orders');
 });
+
+test('the settings pages share the cleaned menu', function (Closure $makeUser) {
+    $user = $makeUser();
+
+    foreach (['profile.edit', 'security.edit', 'appearance.edit'] as $routeName) {
+        $html = $this->actingAs($user)->get(route($routeName))->assertOk()->getContent();
+
+        expect($html)
+            ->not->toContain('Repository')
+            ->not->toContain('Documentation')
+            ->not->toContain('github.com/laravel');
+    }
+})->with([
+    'admin' => [fn () => User::factory()->admin()->create()],
+    'sales manager' => [fn () => User::factory()->salesManager()->create()],
+    'franchise holder' => [fn () => User::factory()->create()],
+]);

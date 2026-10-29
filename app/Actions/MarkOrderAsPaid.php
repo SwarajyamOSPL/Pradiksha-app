@@ -32,6 +32,8 @@ class MarkOrderAsPaid
                 'invoice_number' => sprintf('%s-%s-%06d', config('invoice.prefix'), now()->format('Y'), $locked->id),
             ]);
 
+            app(AdjustOrderStock::class)->deduct($locked);
+
             return true;
         });
 

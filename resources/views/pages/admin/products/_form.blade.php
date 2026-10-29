@@ -9,6 +9,8 @@
 
     <flux:input wire:model="price" :label="__('Price (₹)')" type="number" step="0.01" min="0" description="{{ __('Visible to logged-in franchise holders only.') }}" />
 
+    <flux:input wire:model="stock" :label="__('Stock in hand')" type="number" step="1" min="0" required description="{{ __('Franchise holders can only order a product while it is in stock. 0 means out of stock.') }}" />
+
     <div>
         <flux:input type="file" wire:model="image" :label="__('Image')" accept="image/png,image/jpeg,image/webp" />
         @if ($currentImagePath ?? null)

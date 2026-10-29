@@ -29,12 +29,21 @@
                                 {{ $product->price !== null ? '₹'.number_format((float) $product->price, 2) : __('Price on request') }}
                             </flux:heading>
 
-                            <form method="POST" action="{{ route('cart.add') }}" class="mt-4 flex items-end gap-3">
-                                @csrf
-                                <input type="hidden" name="product_id" value="{{ $product->id }}" />
-                                <flux:input type="number" name="quantity" value="1" min="1" :label="__('Quantity')" class="w-24" />
-                                <flux:button type="submit" variant="primary" icon="shopping-cart">{{ __('Add to Basket') }}</flux:button>
-                            </form>
+                            <flux:text class="mt-1 font-medium {{ $product->stockTextClasses() }}">{{ __($product->stockLabel()) }}</flux:text>
+
+                            @if ($product->isInStock())
+                                <form method="POST" action="{{ route('cart.add') }}" class="mt-4 flex items-end gap-3">
+                                    @csrf
+                                    <input type="hidden" name="product_id" value="{{ $product->id }}" />
+                                    <flux:input type="number" name="quantity" value="1" min="1" max="{{ min(\App\Support\Cart::MAX_QUANTITY, $product->stock) }}" :label="__('Quantity')" class="w-24" />
+                                    <flux:button type="submit" variant="primary" icon="shopping-cart">{{ __('Add to Basket') }}</flux:button>
+                                </form>
+                            @else
+                                <flux:callout icon="no-symbol" color="red" class="mt-4">
+                                    <flux:callout.heading>{{ __('Currently out of stock') }}</flux:callout.heading>
+                                    <flux:callout.text>{{ __('This product cannot be ordered until it is back in stock.') }}</flux:callout.text>
+                                </flux:callout>
+                            @endif
                         @else
                             <flux:callout icon="clock" color="amber">
                                 <flux:callout.heading>{{ __('Your account is awaiting approval') }}</flux:callout.heading>

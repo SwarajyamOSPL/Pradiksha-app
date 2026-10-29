@@ -15,6 +15,34 @@ new #[Title('Products')] class extends Component
     #[Url]
     public string $search = '';
 
+    #[Url]
+    public string $stockFilter = '';
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStockFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updateStock(Product $product, string $stock): void
+    {
+        $stock = trim($stock);
+
+        if (! ctype_digit($stock) || (int) $stock > 1000000) {
+            Flux::toast(variant: 'danger', text: __('Enter a whole number of 0 or more.'));
+
+            return;
+        }
+
+        $product->update(['stock' => (int) $stock]);
+
+        Flux::toast(variant: 'success', text: __('Stock updated for :name.', ['name' => $product->name]));
+    }
+
     public function delete(Product $product): void
     {
         try {
@@ -48,8 +76,13 @@ new #[Title('Products')] class extends Component
     public function with(): array
     {
         return [
+            'outOfStockCount' => Product::query()->outOfStock()->count(),
+            'lowStockCount' => Product::query()->lowStock()->count(),
             'products' => Product::query()
                 ->when($this->search, fn ($query) => $query->where('name', 'like', "%{$this->search}%"))
+                ->when($this->stockFilter === 'out', fn ($query) => $query->outOfStock())
+                ->when($this->stockFilter === 'low', fn ($query) => $query->lowStock())
+                ->when($this->stockFilter === 'in', fn ($query) => $query->inStock())
                 ->latest()
                 ->paginate(15),
         ];
@@ -64,7 +97,25 @@ new #[Title('Products')] class extends Component
         </flux:button>
     </div>
 
-    <flux:input wire:model.live.debounce.300ms="search" :placeholder="__('Search products...')" icon="magnifying-glass" class="mt-6 max-w-sm" />
+    @if ($outOfStockCount > 0 || $lowStockCount > 0)
+        <flux:callout icon="exclamation-triangle" color="amber" class="mt-6">
+            <flux:callout.heading>
+                {{ __(':out out of stock, :low running low', ['out' => $outOfStockCount, 'low' => $lowStockCount]) }}
+            </flux:callout.heading>
+            <flux:callout.text>{{ __('Franchise holders cannot order a product while it is out of stock.') }}</flux:callout.text>
+        </flux:callout>
+    @endif
+
+    <div class="mt-6 flex flex-wrap gap-4">
+        <flux:input wire:model.live.debounce.300ms="search" :placeholder="__('Search products...')" icon="magnifying-glass" class="max-w-sm" />
+
+        <flux:select wire:model.live="stockFilter" class="max-w-xs">
+            <flux:select.option value="">{{ __('All stock levels') }}</flux:select.option>
+            <flux:select.option value="in">{{ __('In stock') }}</flux:select.option>
+            <flux:select.option value="low">{{ __('Low stock (:count or fewer)', ['count' => Product::LOW_STOCK_THRESHOLD]) }}</flux:select.option>
+            <flux:select.option value="out">{{ __('Out of stock') }}</flux:select.option>
+        </flux:select>
+    </div>
 
     <flux:table class="mt-6">
         <flux:table.columns>
@@ -72,6 +123,7 @@ new #[Title('Products')] class extends Component
             <flux:table.column>{{ __('Name') }}</flux:table.column>
             <flux:table.column>{{ __('Category') }}</flux:table.column>
             <flux:table.column>{{ __('Price') }}</flux:table.column>
+            <flux:table.column>{{ __('Stock in hand') }}</flux:table.column>
             <flux:table.column>{{ __('Status') }}</flux:table.column>
             <flux:table.column>{{ __('Actions') }}</flux:table.column>
         </flux:table.columns>
@@ -96,6 +148,21 @@ new #[Title('Products')] class extends Component
                         >
                             <x-slot name="iconLeading"><span class="text-sm text-zinc-500">₹</span></x-slot>
                         </flux:input>
+                    </flux:table.cell>
+                    <flux:table.cell>
+                        <div class="flex items-center gap-2">
+                            <flux:input
+                                type="number" step="1" min="0" size="sm" class="w-24"
+                                value="{{ $product->stock }}"
+                                x-on:change="$wire.updateStock({{ $product->id }}, $event.target.value)"
+                                aria-label="{{ __('Stock in hand for :name', ['name' => $product->name]) }}"
+                            />
+                            @if (! $product->isInStock())
+                                <flux:badge size="sm" color="red">{{ __('Out') }}</flux:badge>
+                            @elseif ($product->isLowStock())
+                                <flux:badge size="sm" color="amber">{{ __('Low') }}</flux:badge>
+                            @endif
+                        </div>
                     </flux:table.cell>
                     <flux:table.cell>
                         <flux:badge :variant="$product->is_active ? 'solid' : 'outline'" wire:click="toggleActive({{ $product->id }})" class="cursor-pointer">
@@ -130,7 +197,7 @@ new #[Title('Products')] class extends Component
                 </flux:table.row>
             @empty
                 <flux:table.row>
-                    <flux:table.cell colspan="6">{{ __('No products found.') }}</flux:table.cell>
+                    <flux:table.cell colspan="7">{{ __('No products found.') }}</flux:table.cell>
                 </flux:table.row>
             @endforelse
         </flux:table.rows>

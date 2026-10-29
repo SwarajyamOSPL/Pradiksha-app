@@ -22,6 +22,7 @@
                     <flux:text class="text-lg font-semibold text-brand-700 dark:text-brand-300">
                         {{ $product->price !== null ? '₹'.number_format((float) $product->price, 2) : __('Price on request') }}
                     </flux:text>
+                    <flux:text size="sm" class="font-medium {{ $product->stockTextClasses() }}">{{ __($product->stockLabel()) }}</flux:text>
                 @else
                     <flux:text size="sm" class="text-brand-500 dark:text-brand-400">{{ __('Pending approval') }}</flux:text>
                 @endif

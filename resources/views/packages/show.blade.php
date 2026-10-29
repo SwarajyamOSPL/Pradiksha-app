@@ -28,9 +28,18 @@
                                 @endif
                             </div>
 
-                            <flux:button :href="route('packages.checkout', $package)" variant="primary" icon="shopping-cart" class="mt-4" wire:navigate>
-                                {{ __('Order this Package') }}
-                            </flux:button>
+                            @if ($package->isAvailable())
+                                <flux:button :href="route('packages.checkout', $package)" variant="primary" icon="shopping-cart" class="mt-4" wire:navigate>
+                                    {{ __('Order this Package') }}
+                                </flux:button>
+                            @else
+                                <flux:callout icon="no-symbol" color="red" class="mt-4">
+                                    <flux:callout.heading>{{ __('Currently out of stock') }}</flux:callout.heading>
+                                    <flux:callout.text>
+                                        {{ $package->products->isEmpty() ? __('This package has no products yet.') : \App\Support\StockCheck::message($package->stockShortages()) }}
+                                    </flux:callout.text>
+                                </flux:callout>
+                            @endif
                         @else
                             <flux:callout icon="clock" color="amber">
                                 <flux:callout.heading>{{ __('Your account is awaiting approval') }}</flux:callout.heading>

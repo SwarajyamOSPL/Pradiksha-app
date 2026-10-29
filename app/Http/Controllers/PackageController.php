@@ -10,7 +10,7 @@ class PackageController extends Controller
     public function index(): View
     {
         return view('packages.index', [
-            'packages' => Package::query()->active()->withCount('products')->orderBy('name')->paginate(12),
+            'packages' => Package::query()->active()->with('products')->withCount('products')->orderBy('name')->paginate(12),
         ]);
     }
 

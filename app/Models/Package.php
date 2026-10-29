@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DiscountType;
+use App\Support\StockCheck;
 use Database\Factories\PackageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 /**
  * @property int $id
@@ -86,6 +88,27 @@ class Package extends Model
             'subtotal' => $breakdown['subtotal'],
             'price' => $breakdown['price'],
         ])->save();
+    }
+
+    /**
+     * Products in this package that are short of stock for the quantity the package needs.
+     * Needs the products relation to be loaded.
+     *
+     * @return Collection<int, array{product: Product, requested: int, available: int}>
+     */
+    public function stockShortages(): Collection
+    {
+        return StockCheck::shortages(
+            $this->products->map(fn (Product $product) => ['product' => $product, 'quantity' => $product->pivot->quantity]),
+        );
+    }
+
+    /**
+     * Whether every product in the package is in stock in the quantity it needs.
+     */
+    public function isAvailable(): bool
+    {
+        return $this->products->isNotEmpty() && $this->stockShortages()->isEmpty();
     }
 
     public function discountAmount(): float

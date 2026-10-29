@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\AdjustOrderStock;
 use App\Actions\MarkOrderAsPaid;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
@@ -38,7 +39,18 @@ new #[Title('Order Details')] class extends Component
 
         // Only apply the status dropdown if the admin changed it, so a manual payment keeps its "Confirmed" status.
         if ($this->status !== $statusBefore) {
-            $this->order->update(['status' => OrderStatus::from($this->status)]);
+            $newStatus = OrderStatus::from($this->status);
+
+            // A paid order's stock is returned when it is cancelled, and taken out again if the cancellation is undone.
+            if ($this->order->isPaid()) {
+                if ($newStatus === OrderStatus::Cancelled && $statusBefore !== OrderStatus::Cancelled->value) {
+                    app(AdjustOrderStock::class)->restock($this->order);
+                } elseif ($statusBefore === OrderStatus::Cancelled->value && $newStatus !== OrderStatus::Cancelled) {
+                    app(AdjustOrderStock::class)->deduct($this->order);
+                }
+            }
+
+            $this->order->update(['status' => $newStatus]);
         }
 
         $this->status = $this->order->status->value;

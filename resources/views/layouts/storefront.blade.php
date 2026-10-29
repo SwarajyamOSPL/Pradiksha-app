@@ -56,6 +56,20 @@
         </header>
 
         <main>
+            @if (session('status') || $errors->any())
+                <div class="mx-auto max-w-6xl px-6 pt-4" x-data="{ show: true }" x-init="setTimeout(() => show = false, 6000)" x-show="show" x-transition>
+                    @if ($errors->any())
+                        <flux:callout icon="exclamation-triangle" color="red" role="alert">
+                            <flux:callout.heading>{{ $errors->first() }}</flux:callout.heading>
+                        </flux:callout>
+                    @else
+                        <flux:callout icon="check-circle" color="green" role="status">
+                            <flux:callout.heading>{{ session('status') }}</flux:callout.heading>
+                        </flux:callout>
+                    @endif
+                </div>
+            @endif
+
             {{ $slot }}
         </main>
 

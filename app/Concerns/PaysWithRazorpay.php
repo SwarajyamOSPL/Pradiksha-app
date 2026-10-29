@@ -4,8 +4,11 @@ namespace App\Concerns;
 
 use App\Actions\MarkOrderAsPaid;
 use App\Models\Order;
+use App\Models\Product;
 use App\Services\Razorpay;
+use App\Support\StockCheck;
 use Flux\Flux;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
 
@@ -19,6 +22,22 @@ trait PaysWithRazorpay
      * The unpaid order currently being paid for.
      */
     public ?int $orderId = null;
+
+    /**
+     * Refuse to start a payment when any product is out of stock or short, telling the customer which.
+     *
+     * @param  Collection<int, array{product: Product, requested: int, available: int}>  $shortages
+     */
+    protected function hasEnoughStock(Collection $shortages): bool
+    {
+        if ($shortages->isEmpty()) {
+            return true;
+        }
+
+        Flux::toast(variant: 'danger', text: StockCheck::message($shortages));
+
+        return false;
+    }
 
     /**
      * Refuse to start a payment for an amount below Razorpay's ₹1 minimum, before any order is created.
@@ -56,6 +75,10 @@ trait PaysWithRazorpay
         if ((float) $order->total_amount < 1) {
             Flux::toast(variant: 'danger', text: __('This order has no payable amount. Please contact us.'));
 
+            return;
+        }
+
+        if (! $this->hasEnoughStock(StockCheck::forOrder($order))) {
             return;
         }
 

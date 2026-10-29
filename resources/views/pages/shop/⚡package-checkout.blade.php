@@ -29,6 +29,13 @@ new #[Title('Checkout')] class extends Component
     {
         abort_unless($this->package->is_active, 404);
 
+        // Re-read the products so the stock check uses the levels right now, not those from when the page opened.
+        $this->package->load('products');
+
+        if (! $this->hasEnoughStock($this->package->stockShortages())) {
+            return;
+        }
+
         if (! $this->hasPayableAmount($this->totals()->total)) {
             return;
         }
@@ -60,7 +67,10 @@ new #[Title('Checkout')] class extends Component
 
     public function with(): array
     {
-        return ['totals' => $this->totals()];
+        return [
+            'totals' => $this->totals(),
+            'shortages' => $this->package->stockShortages(),
+        ];
     }
 }; ?>
 
@@ -81,13 +91,20 @@ new #[Title('Checkout')] class extends Component
 
     @include('pages::shop._order-summary', ['totals' => $totals])
 
+    @if ($shortages->isNotEmpty())
+        <flux:callout icon="exclamation-triangle" color="red" class="mt-6">
+            <flux:callout.heading>{{ __('This package is not available right now') }}</flux:callout.heading>
+            <flux:callout.text>{{ \App\Support\StockCheck::message($shortages) }}</flux:callout.text>
+        </flux:callout>
+    @endif
+
     <flux:textarea wire:model="notes" :label="__('Order notes (optional)')" class="mt-6" rows="3" />
 
     <div class="mt-6 flex items-center justify-end gap-3">
         <flux:text size="sm" class="inline-flex items-center gap-1">
             <flux:icon.lock-closed class="size-4" /> {{ __('Secure payment by Razorpay') }}
         </flux:text>
-        <flux:button variant="primary" icon="credit-card" wire:click="pay" wire:loading.attr="disabled" wire:target="pay">
+        <flux:button variant="primary" icon="credit-card" wire:click="pay" wire:loading.attr="disabled" wire:target="pay" :disabled="$shortages->isNotEmpty()">
             {{ __('Pay ₹:amount', ['amount' => number_format($totals->total, 2)]) }}
         </flux:button>
     </div>
