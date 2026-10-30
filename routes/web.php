@@ -16,6 +16,7 @@ Route::get('packages/{package:slug}', [PackageController::class, 'show'])->name(
 Route::view('franchise', 'franchise')->name('franchise');
 
 Route::view('refund-policy', 'policies.refund')->name('policy.refund');
+Route::view('privacy-policy', 'policies.privacy')->name('policy.privacy');
 
 Route::middleware(['auth'])->group(function () {
     Route::view('account/pending', 'pages.account.pending')->name('account.pending');

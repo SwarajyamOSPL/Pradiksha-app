@@ -101,6 +101,13 @@
                 <flux:input name="pincode" :label="__('Pincode')" :value="old('pincode')" type="text" required autocomplete="postal-code" />
             </div>
 
+            <flux:text size="sm" class="text-center">
+                {{ __('By registering you agree to our') }}
+                <flux:link :href="route('policy.privacy')" target="_blank">{{ __('Privacy Policy') }}</flux:link>
+                {{ __('and') }}
+                <flux:link :href="route('policy.refund')" target="_blank">{{ __('Refund & Return Policy') }}</flux:link>.
+            </flux:text>
+
             <div class="flex items-center justify-end">
                 <flux:button variant="primary" type="submit" class="w-full" data-test="register-button">
                     {{ __('Register') }}
