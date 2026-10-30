@@ -1,12 +1,16 @@
 <?php
 
+use App\Concerns\ShowsFranchiseOrderHistory;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 new #[Title('Franchise Holder')] class extends Component
 {
+    use ShowsFranchiseOrderHistory, WithPagination;
+
     public User $holder;
 
     public function mount(User $user): void
@@ -18,13 +22,11 @@ new #[Title('Franchise Holder')] class extends Component
 
     public function with(): array
     {
-        return [
-            'orders' => $this->holder->orders()->paid()->latest('paid_at')->paginate(10),
-        ];
+        return ['history' => $this->franchiseHistory($this->holder)];
     }
 }; ?>
 
-<section class="w-full max-w-3xl">
+<section class="w-full max-w-5xl">
     <flux:button variant="ghost" :href="route('sales.franchise-holders.index')" wire:navigate icon="arrow-left">
         {{ __('Back') }}
     </flux:button>
@@ -44,37 +46,5 @@ new #[Title('Franchise Holder')] class extends Component
         <flux:text>{{ $holder->address }}, {{ $holder->city }}, {{ $holder->state }} {{ $holder->pincode }}</flux:text>
     </flux:card>
 
-    <flux:heading size="lg" class="mt-8">{{ __('Order History') }}</flux:heading>
-
-    <flux:table class="mt-4">
-        <flux:table.columns>
-            <flux:table.column>{{ __('Order') }}</flux:table.column>
-            <flux:table.column>{{ __('Date') }}</flux:table.column>
-            <flux:table.column>{{ __('Status') }}</flux:table.column>
-            <flux:table.column>{{ __('Total') }}</flux:table.column>
-            <flux:table.column></flux:table.column>
-        </flux:table.columns>
-
-        <flux:table.rows>
-            @forelse ($orders as $order)
-                <flux:table.row wire:key="sales-order-{{ $order->id }}">
-                    <flux:table.cell>#{{ $order->id }}</flux:table.cell>
-                    <flux:table.cell>{{ ($order->paid_at ?? $order->created_at)->format('d M Y') }}</flux:table.cell>
-                    <flux:table.cell><flux:badge size="sm" :color="$order->status->color()">{{ $order->status->label() }}</flux:badge></flux:table.cell>
-                    <flux:table.cell>₹{{ number_format((float) $order->total_amount, 2) }}</flux:table.cell>
-                    <flux:table.cell>
-                        <flux:button size="sm" variant="ghost" :href="route('sales.orders.show', $order)" wire:navigate>{{ __('View') }}</flux:button>
-                    </flux:table.cell>
-                </flux:table.row>
-            @empty
-                <flux:table.row>
-                    <flux:table.cell colspan="5">{{ __('No orders yet.') }}</flux:table.cell>
-                </flux:table.row>
-            @endforelse
-        </flux:table.rows>
-    </flux:table>
-
-    <div class="mt-4">
-        {{ $orders->links() }}
-    </div>
+    <x-franchise-order-history :history="$history" order-route="sales.orders.show" class="mt-8" />
 </section>

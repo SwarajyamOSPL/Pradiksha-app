@@ -607,3 +607,34 @@ test('a negative or text fixed price is rejected', function (string $value) {
 
     expect(Package::where('slug', 'bad-kit')->exists())->toBeFalse();
 })->with(['negative' => '-5', 'text' => 'abc']);
+
+test('the package seeder adds the offer extras and keeps later edits', function () {
+    seedPackages();
+
+    $packages = Package::query()->whereIn('slug', ['basic', 'mini', 'super'])->get()->keyBy('slug');
+
+    expect((float) $packages['basic']->goods_worth)->toBe(9000.0)
+        ->and((float) $packages['mini']->goods_worth)->toBe(20000.0)
+        ->and((float) $packages['super']->goods_worth)->toBe(55000.0)
+        ->and($packages['basic']->inclusions)->toBe(['Canopy', 'T Shirt', 'Visiting Card', 'I Card', 'Promotion Materials'])
+        ->and($packages['super']->inclusions)->toContain('Promotion Materials (complete set)');
+
+    $packages['basic']->update(['goods_worth' => 9500, 'inclusions' => ['Canopy']]);
+    $packages['mini']->update(['inclusions' => []]);
+
+    (new FranchisePackagesSeeder)->run();
+
+    expect((float) $packages['basic']->fresh()->goods_worth)->toBe(9500.0)
+        ->and($packages['basic']->fresh()->inclusions)->toBe(['Canopy'])
+        ->and($packages['mini']->fresh()->inclusions)->toBe([]);
+});
+
+test('the seeder fills in the extras of packages that already exist without them', function () {
+    seedPackages();
+    Package::where('slug', 'basic')->update(['goods_worth' => null, 'inclusions' => null]);
+
+    (new FranchisePackagesSeeder)->run();
+
+    expect((float) Package::where('slug', 'basic')->value('goods_worth'))->toBe(9000.0)
+        ->and(Package::where('slug', 'basic')->first()->inclusions)->toContain('Canopy');
+});

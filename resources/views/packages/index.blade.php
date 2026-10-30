@@ -60,6 +60,18 @@
                         @endif
                     </div>
 
+                    @if ($package->inclusionList())
+                        <div class="mt-6 rounded-xl bg-brand-50 p-4 ring-1 ring-brand-100 dark:bg-brand-950 dark:ring-brand-800">
+                            <p class="font-semibold text-brand-950 dark:text-cream-50">
+                                {{ __('Also with the :name package', ['name' => $package->name]) }}
+                                @if ($package->hasGoodsWorth())
+                                    <span class="font-normal text-brand-700 dark:text-brand-300">&middot; {{ __('₹:amount worth of goods', ['amount' => number_format((float) $package->goods_worth, 0)]) }}</span>
+                                @endif
+                            </p>
+                            <x-package-inclusions :package="$package" columns class="mt-3 text-brand-900 dark:text-cream-100" />
+                        </div>
+                    @endif
+
                     <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4" data-package-products="{{ $package->slug }}">
                         @foreach ($package->products as $product)
                             <div class="flex flex-col gap-2" wire:key="package-{{ $package->id }}-product-{{ $product->id }}">

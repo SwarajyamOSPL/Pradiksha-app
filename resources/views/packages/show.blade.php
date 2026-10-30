@@ -53,6 +53,15 @@
                     <flux:text class="mt-6 whitespace-pre-line text-brand-700 dark:text-brand-200">{{ $package->description }}</flux:text>
                 @endif
 
+                @if ($package->hasGoodsWorth())
+                    <flux:badge color="amber" variant="solid" class="mt-4">{{ __('Get ₹:amount worth of goods', ['amount' => number_format((float) $package->goods_worth, 0)]) }}</flux:badge>
+                @endif
+
+                @if ($package->inclusionList())
+                    <flux:heading size="lg" class="mt-8 text-brand-950 dark:text-cream-50">{{ __('Also included') }}</flux:heading>
+                    <x-package-inclusions :package="$package" class="mt-3 text-brand-900 dark:text-cream-100" />
+                @endif
+
                 <flux:heading size="lg" class="mt-8 text-brand-950 dark:text-cream-50">{{ __("What's included") }}</flux:heading>
                 <ul class="mt-3 space-y-2">
                     @foreach ($package->products as $product)

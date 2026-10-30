@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 /**
- * Creates the three franchise packages (Basic, Mini and Super) with their fixed prices and contents,
+ * Creates the three franchise packages (Basic, Mini and Super) with their fixed prices, contents and extras,
  * adding the few products they need that are not in the catalogue yet.
  *
  * Safe to run more than once: existing products and packages are left exactly as they are, so edits
@@ -123,6 +123,18 @@ class FranchisePackagesSeeder extends Seeder
     ];
 
     /**
+     * What each package promises besides its products, from the business offer poster: the worth of the
+     * goods and the extras that come with it.
+     *
+     * @var array<string, array{goods_worth: int, inclusions: array<int, string>}>
+     */
+    private const EXTRAS = [
+        'basic' => ['goods_worth' => 9000, 'inclusions' => ['Canopy', 'T Shirt', 'Visiting Card', 'I Card', 'Promotion Materials']],
+        'mini' => ['goods_worth' => 20000, 'inclusions' => ['Canopy', 'T Shirt', 'Visiting Card', 'I Card', 'Promotion Materials']],
+        'super' => ['goods_worth' => 55000, 'inclusions' => ['Canopy', 'T Shirt', 'Visiting Card', 'I Card', 'Promotion Materials (complete set)']],
+    ];
+
+    /**
      * The printed MRP of each product, from the package sheets.
      *
      * @var array<string, int>
@@ -184,6 +196,12 @@ class FranchisePackagesSeeder extends Seeder
 
                 $package->refreshPrice();
             }
+
+            // Fill in the extras only where they were never set, so the admin's edits are kept.
+            $package->forceFill([
+                'goods_worth' => $package->goods_worth ?? self::EXTRAS[$slug]['goods_worth'],
+                'inclusions' => $package->inclusions ?? self::EXTRAS[$slug]['inclusions'],
+            ])->save();
         }
     }
 

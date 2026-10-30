@@ -92,7 +92,7 @@ test('admin dashboard shows new paid orders from notifications and lets the admi
 test('admin dashboard surfaces franchise holders awaiting approval', function () {
     $admin = User::factory()->admin()->create();
     $pending = User::factory()->pending()->create(['business_name' => 'Green Leaf Traders', 'city' => 'Pune']);
-    User::factory()->create(['business_name' => 'Already Approved Co']);
+    $approved = User::factory()->create(['business_name' => 'Already Approved Co']);
 
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
@@ -100,7 +100,8 @@ test('admin dashboard surfaces franchise holders awaiting approval', function ()
         ->assertSee('1 franchise holder is waiting for approval')
         ->assertSee('Green Leaf Traders')
         ->assertSee(route('admin.franchise-holders.show', $pending))
-        ->assertDontSee('Already Approved Co')
+        ->assertSee('approveHolder('.$pending->id.')', false)
+        ->assertDontSee('approveHolder('.$approved->id.')', false)
         ->assertDontSee('All caught up');
 });
 

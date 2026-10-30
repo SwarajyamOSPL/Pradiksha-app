@@ -26,13 +26,25 @@
         <h2 class="mt-1 text-4xl font-semibold tracking-tight">{{ $package->name }}</h2>
 
         <p class="mt-5 text-4xl font-semibold tracking-tight">₹{{ number_format((float) $package->price, 0) }}</p>
-        <p class="mt-1 text-sm text-white/80">
+        @if ($package->hasGoodsWorth())
+            <p class="mt-2 inline-block rounded-md bg-amber-300 px-2.5 py-1 text-sm font-semibold text-brand-950" data-goods-worth>
+                {{ __('Get ₹:amount worth of goods', ['amount' => number_format((float) $package->goods_worth, 0)]) }}
+            </p>
+        @endif
+        <p class="mt-2 text-sm text-white/80">
             {{ trans_choice(':count product|:count products', $package->products->count()) }}
             &middot; {{ trans_choice(':count unit|:count units', $package->unitCount()) }}
         </p>
     </div>
 
     <div class="flex flex-col gap-3 p-5">
+        @if ($package->inclusionList())
+            <div>
+                <p class="text-xs font-semibold tracking-widest text-brand-600 uppercase dark:text-brand-300">{{ __('Also included') }}</p>
+                <x-package-inclusions :package="$package" class="mt-2 text-brand-900 dark:text-cream-100" />
+            </div>
+        @endif
+
         <div class="flex flex-wrap gap-3">
             <flux:button
                 type="button"

@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\ApproveFranchiseHolder;
+use App\Concerns\ShowsFranchiseOrderHistory;
 use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
@@ -11,13 +12,26 @@ use App\Models\User;
 use App\Notifications\NewOrderPlaced;
 use Flux\Flux;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 new #[Title('Admin Dashboard')] class extends Component
 {
+    use ShowsFranchiseOrderHistory, WithPagination;
+
     /**
-     * @return array<string, mixed>
+     * The franchise whose purchase history is open.
      */
+    #[Url]
+    public string $franchise = '';
+
+    public function updatedFranchise(): void
+    {
+        $this->month = '';
+        $this->resetPage();
+    }
+
     public function approveHolder(int $userId, ApproveFranchiseHolder $approveFranchiseHolder): void
     {
         $holder = User::query()->where('role', UserRole::FranchiseHolder)->findOrFail($userId);
@@ -41,8 +55,14 @@ new #[Title('Admin Dashboard')] class extends Component
             ->groupBy('status')
             ->pluck('total', 'status');
         $newOrders = auth()->user()->unreadNotifications()->where('type', NewOrderPlaced::class);
+        $selectedFranchise = $this->franchise !== ''
+            ? (clone $holders)->find((int) $this->franchise)
+            : null;
 
         return [
+            'historyFranchises' => (clone $holders)->orderBy('business_name')->orderBy('name')->get(['id', 'name', 'business_name', 'city']),
+            'selectedFranchise' => $selectedFranchise,
+            'history' => $selectedFranchise ? $this->franchiseHistory($selectedFranchise) : null,
             'newOrderCount' => (clone $newOrders)->count(),
             'newOrders' => (clone $newOrders)->latest()->limit(5)->get(),
             'orderValue' => (float) Order::paid()->where('status', '!=', OrderStatus::Cancelled)->sum('total_amount'),
@@ -279,4 +299,36 @@ new #[Title('Admin Dashboard')] class extends Component
             </flux:card>
         </div>
     </div>
+
+    <flux:card id="franchise-history">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <flux:heading size="lg">{{ __('Franchise order history') }}</flux:heading>
+                <flux:text size="sm" class="mt-1">{{ __('Pick a franchise to see what it ordered, date wise and month wise.') }}</flux:text>
+            </div>
+
+            <flux:select wire:model.live="franchise" class="max-w-xs" :aria-label="__('Franchise')">
+                <flux:select.option value="">{{ __('Select a franchise') }}</flux:select.option>
+                @foreach ($historyFranchises as $holder)
+                    <flux:select.option value="{{ $holder->id }}">{{ $holder->business_name ?: $holder->name }}{{ $holder->city ? ' ('.$holder->city.')' : '' }}</flux:select.option>
+                @endforeach
+            </flux:select>
+        </div>
+
+        @if ($selectedFranchise)
+            <div class="mt-6 flex flex-wrap items-start justify-between gap-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700" data-selected-franchise>
+                <div>
+                    <flux:heading>{{ $selectedFranchise->business_name ?: $selectedFranchise->name }}</flux:heading>
+                    <flux:text size="sm" class="mt-1">
+                        {{ $selectedFranchise->name }}
+                        @if ($selectedFranchise->phone) &middot; {{ $selectedFranchise->phone }} @endif
+                        @if ($selectedFranchise->city) &middot; {{ $selectedFranchise->city }} @endif
+                    </flux:text>
+                </div>
+                <flux:button size="sm" :href="route('admin.franchise-holders.show', $selectedFranchise)" wire:navigate>{{ __('Open franchise') }}</flux:button>
+            </div>
+
+            <x-franchise-order-history :history="$history" order-route="admin.orders.show" class="mt-6" />
+        @endif
+    </flux:card>
 </section>

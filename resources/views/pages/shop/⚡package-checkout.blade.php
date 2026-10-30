@@ -87,6 +87,13 @@ new #[Title('Checkout')] class extends Component
         @endforeach
     </div>
 
+    @if ($package->inclusionList())
+        <div class="mt-6 rounded-xl bg-zinc-50 p-4 dark:bg-zinc-800/50">
+            <flux:heading>{{ __('Also included with this package') }}</flux:heading>
+            <x-package-inclusions :package="$package" class="mt-3" />
+        </div>
+    @endif
+
     @include('pages::shop._order-summary', ['totals' => $totals])
 
     @if ($shortages->isNotEmpty())

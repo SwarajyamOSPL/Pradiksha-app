@@ -5,6 +5,25 @@
 
     <flux:textarea wire:model="description" :label="__('Description')" rows="4" />
 
+    <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+        <flux:heading size="lg">{{ __('What else comes with the package') }}</flux:heading>
+        <flux:text size="sm" class="mt-1">{{ __('Shown on the packages page next to the products, for example a canopy or T-shirts.') }}</flux:text>
+
+        <flux:input
+            wire:model="goods_worth"
+            :label="__('Worth of goods (₹), optional')"
+            type="number" step="0.01" min="0" class="mt-4"
+            description="{{ __('For example 9000 for a package that costs 5000. Shown as "₹9,000 worth of goods".') }}"
+        />
+
+        <flux:textarea
+            wire:model="inclusionsText"
+            :label="__('Also included, one item per line')"
+            rows="5" class="mt-4"
+            placeholder="Canopy&#10;T Shirt&#10;Visiting Card"
+        />
+    </div>
+
     <div>
         <flux:input type="file" wire:model="image" :label="__('Image')" accept="image/png,image/jpeg,image/webp" />
         @if ($currentImagePath ?? null)

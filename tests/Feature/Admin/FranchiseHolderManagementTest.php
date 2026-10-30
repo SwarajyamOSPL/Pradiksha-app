@@ -49,10 +49,12 @@ test('admin can assign a sales manager to a franchise holder', function () {
 test('admin can view a franchise holders order history', function () {
     $admin = User::factory()->admin()->create();
     $holder = User::factory()->create();
-    $order = Order::factory()->create(['user_id' => $holder->id]);
+    $order = Order::factory()->paid()->create(['user_id' => $holder->id]);
+    $unpaid = Order::factory()->create(['user_id' => $holder->id]);
 
     $this->actingAs($admin)
         ->get(route('admin.franchise-holders.show', $holder))
         ->assertOk()
-        ->assertSee('#'.$order->id);
+        ->assertSee(route('admin.orders.show', $order))
+        ->assertDontSee(route('admin.orders.show', $unpaid));
 });

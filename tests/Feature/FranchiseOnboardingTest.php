@@ -82,8 +82,9 @@ test('the admin dashboard lists pending requests and can approve one, which emai
     Livewire::actingAs($admin)
         ->test('pages::admin.dashboard')
         ->assertSee('Green Leaf Franchise')
+        ->assertSee('approveHolder('.$pending->id.')', false)
         ->call('approveHolder', $pending->id)
-        ->assertDontSee('Green Leaf Franchise');
+        ->assertDontSee('approveHolder('.$pending->id.')', false);
 
     expect($pending->refresh()->status)->toBe(UserStatus::Approved);
 

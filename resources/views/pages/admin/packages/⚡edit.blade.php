@@ -2,6 +2,7 @@
 
 use App\Actions\StoreUploadedImageAsWebp;
 use App\Concerns\CalculatesPackagePricing;
+use App\Concerns\ManagesPackageExtras;
 use App\Concerns\PackageValidationRules;
 use App\Models\Package;
 use App\Models\Product;
@@ -13,7 +14,7 @@ use Livewire\WithFileUploads;
 
 new #[Title('Edit Package')] class extends Component
 {
-    use CalculatesPackagePricing, PackageValidationRules, WithFileUploads;
+    use CalculatesPackagePricing, ManagesPackageExtras, PackageValidationRules, WithFileUploads;
 
     public Package $package;
 
@@ -43,6 +44,7 @@ new #[Title('Edit Package')] class extends Component
         $this->discount_type = $package->discount_type?->value;
         $this->discount_value = (string) ((float) $package->discount_value);
         $this->fixed_price = $package->fixed_price !== null ? (string) ((float) $package->fixed_price) : null;
+        $this->fillPackageExtras($package);
         $this->is_active = $package->is_active;
         $this->currentImagePath = $package->image_path;
         $this->availableProducts = Product::query()->orderBy('name')->get();
@@ -78,8 +80,9 @@ new #[Title('Edit Package')] class extends Component
         $validated = $this->validate($this->packageRules($this->package->id));
 
         $this->package->update([
-            ...collect($validated)->except(['image', 'products', 'discount_type', 'discount_value', 'fixed_price'])->toArray(),
+            ...collect($validated)->except(['image', 'products', 'discount_type', 'discount_value', 'fixed_price', 'goods_worth', 'inclusionsText'])->toArray(),
             ...$this->discountAttributes(),
+            ...$this->extrasAttributes(),
         ]);
 
         if ($this->image) {

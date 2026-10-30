@@ -2,6 +2,7 @@
 
 use App\Actions\StoreUploadedImageAsWebp;
 use App\Concerns\CalculatesPackagePricing;
+use App\Concerns\ManagesPackageExtras;
 use App\Concerns\PackageValidationRules;
 use App\Models\Package;
 use App\Models\Product;
@@ -14,7 +15,7 @@ use Livewire\WithFileUploads;
 
 new #[Title('Create Package')] class extends Component
 {
-    use CalculatesPackagePricing, PackageValidationRules, WithFileUploads;
+    use CalculatesPackagePricing, ManagesPackageExtras, PackageValidationRules, WithFileUploads;
 
     public string $name = '';
 
@@ -75,8 +76,9 @@ new #[Title('Create Package')] class extends Component
         $validated = $this->validate($this->packageRules());
 
         $package = Package::create([
-            ...collect($validated)->except(['image', 'products', 'discount_type', 'discount_value', 'fixed_price'])->toArray(),
+            ...collect($validated)->except(['image', 'products', 'discount_type', 'discount_value', 'fixed_price', 'goods_worth', 'inclusionsText'])->toArray(),
             ...$this->discountAttributes(),
+            ...$this->extrasAttributes(),
         ]);
 
         if ($this->image) {

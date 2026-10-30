@@ -18,15 +18,17 @@ use Illuminate\Support\Collection;
  * @property string $name
  * @property string $slug
  * @property string|null $description
+ * @property array<int, string>|null $inclusions
  * @property string|null $image_path
  * @property float $subtotal
  * @property DiscountType|null $discount_type
  * @property float $discount_value
  * @property float|null $fixed_price
+ * @property float|null $goods_worth
  * @property float $price
  * @property bool $is_active
  */
-#[Fillable(['name', 'slug', 'description', 'image_path', 'subtotal', 'discount_type', 'discount_value', 'fixed_price', 'price', 'is_active'])]
+#[Fillable(['name', 'slug', 'description', 'inclusions', 'image_path', 'subtotal', 'discount_type', 'discount_value', 'fixed_price', 'goods_worth', 'price', 'is_active'])]
 class Package extends Model
 {
     /** @use HasFactory<PackageFactory> */
@@ -46,6 +48,8 @@ class Package extends Model
             'discount_type' => DiscountType::class,
             'discount_value' => 'decimal:2',
             'fixed_price' => 'decimal:2',
+            'goods_worth' => 'decimal:2',
+            'inclusions' => 'array',
             'price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
@@ -57,6 +61,24 @@ class Package extends Model
     public function hasFixedPrice(): bool
     {
         return $this->fixed_price !== null;
+    }
+
+    /**
+     * The extras that come with the package besides its products, such as a canopy or T-shirt.
+     *
+     * @return array<int, string>
+     */
+    public function inclusionList(): array
+    {
+        return array_values(array_filter($this->inclusions ?? [], 'filled'));
+    }
+
+    /**
+     * Whether the package promises goods worth more than its price.
+     */
+    public function hasGoodsWorth(): bool
+    {
+        return (float) $this->goods_worth > 0;
     }
 
     /**
