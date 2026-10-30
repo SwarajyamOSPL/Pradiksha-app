@@ -103,8 +103,9 @@
                     </div>
                 </div>
 
-                <div class="mt-10 border-t border-brand-100 pt-6 text-sm text-brand-600 dark:border-brand-800 dark:text-brand-300">
-                    &copy; {{ now()->year }} {{ config('app.name') }}. {{ __('All rights reserved.') }}
+                <div class="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-brand-100 pt-6 text-sm text-brand-600 dark:border-brand-800 dark:text-brand-300">
+                    <span>&copy; {{ now()->year }} {{ config('app.name') }}. {{ __('All rights reserved.') }}</span>
+                    <flux:link :href="route('policy.refund')" variant="subtle" wire:navigate>{{ __('Refund & Return Policy') }}</flux:link>
                 </div>
             </div>
         </footer>

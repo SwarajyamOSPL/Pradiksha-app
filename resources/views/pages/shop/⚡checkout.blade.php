@@ -92,6 +92,13 @@ new #[Title('Checkout')] class extends Component
         </flux:callout>
     @endif
 
+    <flux:callout icon="information-circle" class="mt-6">
+        <flux:callout.text>
+            {{ __('You can cancel this order within 24 hours of placing it.') }}
+            <flux:link :href="route('policy.refund')" target="_blank">{{ __('Read our Refund & Return Policy') }}</flux:link>
+        </flux:callout.text>
+    </flux:callout>
+
     <flux:textarea wire:model="notes" :label="__('Order notes (optional)')" class="mt-6" rows="3" />
 
     <div class="mt-6 flex items-center justify-end gap-3">
